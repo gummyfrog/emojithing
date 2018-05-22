@@ -89,6 +89,10 @@ function findObj(objects, key, value) {
 
 function request(options) {
 
+
+  // cutoff == least number of times a word must be used to be considered data
+  // toolow == how many tweets per search is considered low frequency
+
   // query
   // origin
 
@@ -255,6 +259,7 @@ function requestComplete(obj) {
   delete obj.temp_wordpool;
   delete obj.temp_usableTweets;
   delete obj.temp_tweetTypes;
+  delete obj.temp_times;
 
   if(obj.isChild) {
     let parentObj = jsonfile.readFileSync('./magimagi/products/product-' + obj.parentFileName + '.json');
@@ -274,7 +279,7 @@ function requestComplete(obj) {
 };
 
 function formatProduct(product) {
-  jsonfile.readFile('./magimagi/products/product-' + product + '<origin<START.json', function(err, obj) {
+  jsonfile.readFile('./magimagi/products/product-' + product + '.json', function(err, obj) {
     if (err) throw err;
 
     delete obj.parentFileName;
@@ -286,7 +291,9 @@ function formatProduct(product) {
     // delete obj._filename;
     delete obj._count;
     delete obj.retweeted_tweets;
-
+    delete obj._cutoff;
+    delete obj._childQueries;
+    delete obj._tooLow;
 
     for(var key in obj.hashtagObjs) {
       delete obj.hashtagObjs[key].parentFileName;
@@ -297,6 +304,10 @@ function formatProduct(product) {
       // delete obj.hashtagObjs[key]._filename;
       delete obj.hashtagObjs[key]._count;
       delete obj.hashtagObjs[key].retweeted_tweets;
+      delete obj.hashtagObjs[key]._cutoff;
+      delete obj.hashtagObjs[key]._childQueries;
+      delete obj.hashtagObjs[key]._tooLow;
+
     }
 
 
@@ -313,7 +324,7 @@ function trimData(data) {
   for(var key in data) {
 
     var returnObj = {};
-    var slicedData = Object.keys(data[key]).map(dataKey => {return {key:dataKey,value:data[key][dataKey]}}).slice(0, 15).sort(function(a, b) {return b.value-a.value})
+    var slicedData = Object.keys(data[key]).map(dataKey => {return {key:dataKey,value:data[key][dataKey]}}).sort(function(a, b) {return b.value-a.value})
 
 
     for (var i=0; i<slicedData.length; i++) {
@@ -435,7 +446,7 @@ function searchLoop() {
           if(obj.temp_usableTweets <= obj._tooLow) {
             obj.low_frequency = true;
           }
-
+          obj.temp_times.push({y:obj.temp_usableTweets, x: moment().format('X')});
           obj.temp_usableTweets = 0;
 
 
@@ -466,12 +477,9 @@ awake();
 // setTimeout(function() { request("love", 200, 3) }, 1000 * 1);
 
 // setTimeout(function() { getRateLimit(0) }, 1000 * 1);
-
-var options = {query:'news', count:200, depth:5, childQueries:5, cutoff:3, tooLow:1}
-setTimeout(function() { request(options) }, 1000 * 1);
-
-setInterval(searchLoop, 1000 * 8);
-
-
-
-// formatProduct('news8753');
+//
+var options = {query:'love', count:7000, depth:1, childQueries:3, cutoff:60, tooLow:1}
+//
+// setTimeout(function() { request(options) }, 1000 * 1);
+// setInterval(searchLoop, 1000 * 8);
+formatProduct('love9016');
