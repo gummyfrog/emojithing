@@ -1,0 +1,1 @@
+warning|2,infinity|1,war|1,spoiler|1,perceived|1,blocked|1,dont|2,care|2,broken|1,beat └📁|1,mousetrap   └📁|1,kick|1,drum     └⚠️|1,folder|1,empty|1,⚠️⚠️⚠️|2,loves|1,totoro|1,backpack|1,tron|1,future⚠️⚠️⚠️⚠️|1,weather|1,strong|1,wind|1,valid|1,todaywarning|1,⚠️❗️im|1,gemini|1,
