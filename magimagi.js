@@ -5,6 +5,8 @@ var jsonfile = require('jsonfile')
 var asyncLoop = require('node-async-loop');
 var onlyEmoji = require('emoji-aware').onlyEmoji;
 var emojiTree = require('emoji-tree');
+var moment = require('moment');
+moment().format();
 
 const helperFunctions = require('./helperFunctions.js');
 
@@ -33,7 +35,7 @@ function getEmojisFromString(string) {
 function initializeClients(clientsArray) {
   fs.readdir('./clients', function (err, files) {
     console.log('Entered ./clients')
-    for(i=1; i<files.length; i++) {
+    for(i=1; i<files.length-1; i++) {
       console.log('Reading / ' + files[i]);
       jsonfile.readFile('./clients/' + files[i], function(err, obj) {
         var client = new Twitter(obj);
@@ -87,7 +89,6 @@ function findObj(objects, key, value) {
 
 function request(options) {
 
-  console.log(options)
   // query
   // origin
 
@@ -110,12 +111,12 @@ function request(options) {
   // }
 
   var filename;
-  if(options.hasOwnProperty('isChild')) {
+  if(options.hasOwnProperty('isChild') && options.isChild == true) {
     filename = generateFileName(options.query, options.requestParent, options.parentFileName);
   } else {
     filename = generateFileName(options.query);
     options.currentDepth = 0;
-    options.parentFileName = '';
+    options.parentFileName = filename;
     options.requestParent = '';
   }
 
@@ -137,6 +138,9 @@ function request(options) {
     _count: options.count,
     _cutoff: options.cutoff,
     _childQueries: options.childQueries,
+    _excludeRetweets: options._excludeRetweets,
+    _tooLow: options.tooLow,
+    // consolidate into options{}?
     collectedTweets: 0,
     data: {},
 
@@ -145,6 +149,7 @@ function request(options) {
 
     parentFileName: options.parentFileName,
     requestParent: options.requestParent,
+    isChild: options.isChild,
     children: [],
     // popularTweets: [],
     hashtagObjs: [],
@@ -154,7 +159,8 @@ function request(options) {
     low_frequency: false,
     temp_tweetTypes: [],
     temp_wordpool: [],
-    temp_usableTweets: 0
+    temp_usableTweets: 0,
+    temp_times: []
 
   }, function (err) {
     if(err) {
@@ -201,7 +207,7 @@ function wordsFor(dict, count) {
   return data.slice(0, count);
 }
 
-function makeFrequencyDicts(data, tweetTypes, cutoff) {
+function makeFrequencyDicts(data, tweetTypes, times, cutoff) {
 
   let hashtags = data.filter(obj => obj[0] == '#');
   let emojis = [].concat.apply([], data.filter(string => onlyEmoji(string).length >= 1).map(string => getEmojisFromString(string)));
@@ -216,7 +222,8 @@ function makeFrequencyDicts(data, tweetTypes, cutoff) {
     hashtags: helperFunctions.makeFrequencyDict(hashtags, cutoff),
     emojis: helperFunctions.makeFrequencyDict(emojis, cutoff),
     words: helperFunctions.makeFrequencyDict(data, cutoff),
-    types: helperFunctions.makeFrequencyDict(tweetTypes, cutoff)
+    types: helperFunctions.makeFrequencyDict(tweetTypes, cutoff),
+    times: times
   };
 
 
@@ -227,15 +234,15 @@ function makeFrequencyDicts(data, tweetTypes, cutoff) {
 function requestComplete(obj) {
   console.log(' - ' + obj._query + ' is done.');
   deoccupyclient(obj._clientNum)
-  obj.data = makeFrequencyDicts(obj.temp_wordpool, obj.temp_tweetTypes, 5);
+  obj.data = makeFrequencyDicts(obj.temp_wordpool, obj.temp_tweetTypes, obj.temp_times, obj._cutoff);
   obj.temp_wordpool = [];
-  var topHashtags = wordsFor(obj.data.hashtags, 5);
+  var topHashtags = wordsFor(obj.data.hashtags, obj._childQueries);
 
   if(obj.currentDepth != obj._depth) {
     console.log(' X Requesting ' + topHashtags.length + ' more searches.');
     for(x=0;x<topHashtags.length;x++) {
       if(topHashtags[x].key.toLowerCase() != obj.parentFileName.toLowerCase() && topHashtags[x].key.toLowerCase() != obj._query.toLowerCase()) {
-        obj.children.push(request(topHashtags[x].key, obj._count /1.2, obj._depth, obj.currentDepth+1, obj.parentFileName, obj._query));
+        obj.children.push(request({query: topHashtags[x].key, count: obj._count/1.2, depth: obj._depth, currentDepth: obj.currentDepth+1, parentFileName:obj.parentFileName, requestParent: obj._query, tooLow: obj.tooLow, isChild: true}))
       }
     }
   } else {
@@ -249,7 +256,7 @@ function requestComplete(obj) {
   delete obj.temp_usableTweets;
   delete obj.temp_tweetTypes;
 
-  if(obj.parentFileName != obj._filename) {
+  if(obj.isChild) {
     let parentObj = jsonfile.readFileSync('./magimagi/products/product-' + obj.parentFileName + '.json');
     parentObj.hashtagObjs.push(obj);
     jsonfile.writeFileSync('./magimagi/products/product-' + parentObj._filename + '.json', parentObj);
@@ -348,7 +355,8 @@ function formatHashtagObjs(objArray) {
 }
 
 function searchLoop() {
-  console.log('\n');
+  console.log('\n')
+  console.log(' ⧗ ' + moment().format("MMM Do, h:mm:ss a"))
   console.log(occupiedClientNumbers);
   fs.readdir('./magimagi/requests', function (err, files) {
     console.log('Entered /requests')
@@ -379,8 +387,8 @@ function searchLoop() {
 
 
         // searching
-
         console.log(' * Searching Twitter for ' + obj._query + ' with Client #' + obj._clientNum);
+
         // getRateLimit(obj._clientNum);
         clients[obj._clientNum].get('search/tweets', {q: obj._query, result_type: 'recent', lang: 'en', count: 100}, function(error, tweets, response) {
           if(error) {
@@ -424,7 +432,7 @@ function searchLoop() {
           console.log('   ' + obj.collectedTweets + ' / ' + obj._count);
           console.log(' + ' + obj.temp_usableTweets + ' / ' + tweets.statuses.length);
           console.log('\n');
-          if(obj.temp_usableTweets <= 2) {
+          if(obj.temp_usableTweets <= obj._tooLow) {
             obj.low_frequency = true;
           }
 
@@ -456,11 +464,11 @@ function searchLoop() {
 
 awake();
 // setTimeout(function() { request("love", 200, 3) }, 1000 * 1);
-// setTimeout(function() { request(options) }, 1000 * 1);
 
 // setTimeout(function() { getRateLimit(0) }, 1000 * 1);
 
-var options = {query:'news', count:200, depth:5, childQueries:5, cutoff:3}
+var options = {query:'news', count:200, depth:5, childQueries:5, cutoff:3, tooLow:1}
+setTimeout(function() { request(options) }, 1000 * 1);
 
 setInterval(searchLoop, 1000 * 8);
 
