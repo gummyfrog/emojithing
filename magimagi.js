@@ -140,7 +140,7 @@ function request(options) {
     _filename: filename,
     _clientNum: assignedClient,
     _count: options.count,
-    _cutoff: options.cutoff,
+    _cutoffs: options.cutoffs,
     _childQueries: options.childQueries,
     _excludeRetweets: options._excludeRetweets,
     _tooLow: options.tooLow,
@@ -211,7 +211,7 @@ function wordsFor(dict, count) {
   return data.slice(0, count);
 }
 
-function makeFrequencyDicts(data, tweetTypes, times, cutoff) {
+function makeFrequencyDicts(data, tweetTypes, times, cutoffs) {
 
   let hashtags = data.filter(obj => obj[0] == '#');
   let emojis = [].concat.apply([], data.filter(string => onlyEmoji(string).length >= 1).map(string => getEmojisFromString(string)));
@@ -222,11 +222,13 @@ function makeFrequencyDicts(data, tweetTypes, times, cutoff) {
     }
   });
 
+  console.log('making frequency dictionary with cutoffs:' + cutoffs);
+
   return {
-    hashtags: helperFunctions.makeFrequencyDict(hashtags, cutoff),
-    emojis: helperFunctions.makeFrequencyDict(emojis, cutoff),
-    words: helperFunctions.makeFrequencyDict(data, cutoff),
-    types: helperFunctions.makeFrequencyDict(tweetTypes, cutoff),
+    hashtags: helperFunctions.makeFrequencyDict(hashtags, cutoffs.hashtags),
+    emojis: helperFunctions.makeFrequencyDict(emojis, cutoffs.emojis),
+    words: helperFunctions.makeFrequencyDict(data, cutoffs.words),
+    types: helperFunctions.makeFrequencyDict(tweetTypes, 0),
     times: times
   };
 
@@ -238,7 +240,7 @@ function makeFrequencyDicts(data, tweetTypes, times, cutoff) {
 function requestComplete(obj) {
   console.log(' - ' + obj._query + ' is done.');
   deoccupyclient(obj._clientNum)
-  obj.data = makeFrequencyDicts(obj.temp_wordpool, obj.temp_tweetTypes, obj.temp_times, obj._cutoff);
+  obj.data = makeFrequencyDicts(obj.temp_wordpool, obj.temp_tweetTypes, obj.temp_times, obj._cutoffs);
   obj.temp_wordpool = [];
   var topHashtags = wordsFor(obj.data.hashtags, obj._childQueries);
 
@@ -246,7 +248,7 @@ function requestComplete(obj) {
     console.log(' X Requesting ' + topHashtags.length + ' more searches.');
     for(x=0;x<topHashtags.length;x++) {
       if(topHashtags[x].key.toLowerCase() != obj.parentFileName.toLowerCase() && topHashtags[x].key.toLowerCase() != obj._query.toLowerCase()) {
-        obj.children.push(request({query: topHashtags[x].key, count: obj._count/1.2, depth: obj._depth, currentDepth: obj.currentDepth+1, parentFileName:obj.parentFileName, requestParent: obj._query, tooLow: obj.tooLow, isChild: true}))
+        obj.children.push(request({query: topHashtags[x].key, count: obj._count/1.2, depth: obj._depth, currentDepth: obj.currentDepth+1, parentFileName:obj.parentFileName, requestParent: obj._query, cutoffs: obj.cutoffs, tooLow: obj.tooLow, isChild: true}))
       }
     }
   } else {
@@ -290,8 +292,10 @@ function formatProduct(product) {
     // delete obj.currentDepth;
     // delete obj._filename;
     delete obj._count;
+    delete obj.isChild;
+
     delete obj.retweeted_tweets;
-    delete obj._cutoff;
+    delete obj._cutoffs;
     delete obj._childQueries;
     delete obj._tooLow;
 
@@ -303,8 +307,9 @@ function formatProduct(product) {
       // delete obj.hashtagObjs[key].currentDepth;
       // delete obj.hashtagObjs[key]._filename;
       delete obj.hashtagObjs[key]._count;
+      delete obj.hashtagObjs[key].isChild;
       delete obj.hashtagObjs[key].retweeted_tweets;
-      delete obj.hashtagObjs[key]._cutoff;
+      delete obj.hashtagObjs[key]._cutoffs;
       delete obj.hashtagObjs[key]._childQueries;
       delete obj.hashtagObjs[key]._tooLow;
 
@@ -478,8 +483,8 @@ awake();
 
 // setTimeout(function() { getRateLimit(0) }, 1000 * 1);
 //
-var options = {query:'love', count:7000, depth:1, childQueries:3, cutoff:60, tooLow:1}
+var options = {query:'love', count:1000, depth:1, childQueries:0, cutoffs:{words:'percentage', emojis:'percentage', hashtags:'percentage'}, tooLow:1}
 //
 // setTimeout(function() { request(options) }, 1000 * 1);
 // setInterval(searchLoop, 1000 * 8);
-formatProduct('love9016');
+formatProduct('love8158');

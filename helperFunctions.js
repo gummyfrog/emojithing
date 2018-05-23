@@ -13,7 +13,7 @@ exports.sterilizeTweet = function(tweetText, pool, excludeArray) {
   for(i=0;i<words.length;i++) {
     push = false;
 
-    if(words[i].includes('@') || words[i].includes('https') || words[i].length < 3 || excludeArray.includes(words[i]) ) {
+    if(words[i].includes('@') || words[i].includes('https') || words[i].length < 3 || excludeArray.includes(words[i]) || words[i].match(/^[0-9]+$/) != null ) {
       purgeWords.push(words[i]);
     }
 
@@ -94,22 +94,45 @@ exports.wordsFor = function(emoji, count) {
 
 }
 
+function highestFrequencyinData(data) {
+  var tempCounts = {};
+  for (var t = 0; t < data.length; t++) {
+      var num = data[t];
+      tempCounts[num] = tempCounts[num] ? tempCounts[num] + 1 : 1;
+  }
+  var p = Object.keys(tempCounts).map(i => tempCounts[i]).sort(function(a, b){
+      return b-a
+  })
 
+  return p[0];
+}
 
 exports.makeFrequencyDict = function(data, cutoff) {
   var counts = {};
   var result = {};
+  var cutStorage = cutoff;
+
+  if(cutoff == 'percentage') {
+    var highFreq = highestFrequencyinData(data)
+    cutStorage = (10.3 / 100) * highFreq;
+    console.log('15.2 percent of ' + highFreq  + ' is ' + cutStorage);
+  }
 
   for (var i = 0; i < data.length; i++) {
       var num = data[i];
       counts[num] = counts[num] ? counts[num] + 1 : 1;
   }
-
   for (key in counts) {
-    if (counts.hasOwnProperty(key) && counts[key] > cutoff) {
+    if (counts.hasOwnProperty(key) && counts[key] > cutStorage) {
         result[key] = counts[key];
     }
   }
 
-  return result;
+  var backToArray = Object.keys(result).map(key => ({key:key,value:result[key]}) ).sort(function(a,b) {return b.value-a.value});
+  var backToObject = {};
+  for (var l=0; l<backToArray.length; l++) {
+    backToObject[backToArray[l].key] = backToArray[l].value;
+  }
+
+  return backToObject;
 }
