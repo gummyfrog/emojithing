@@ -483,7 +483,7 @@ awake();
 
 // setTimeout(function() { getRateLimit(0) }, 1000 * 1);
 //
-var options = {query:'love', count:17000, depth:1, childQueries:0, cutoffs:{words:{type:'percentage', value:2}, emojis:{type:'percentage', value:10}, hashtags:{type:'percentage', value:5}}, tooLow:1}
+var options = {query:'love', count:50000, depth:1, childQueries:0, cutoffs:{words:{type:'percentage', value:3.5}, emojis:{type:'percentage', value:10}, hashtags:{type:'percentage', value:15}}, tooLow:1}
 //
 // setTimeout(function() { request(options) }, 1000 * 1);
 setInterval(searchLoop, 1000 * 4);
