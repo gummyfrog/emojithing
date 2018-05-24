@@ -107,15 +107,35 @@ function highestFrequencyinData(data) {
   return p[0];
 }
 
+exports.decimate = function(data, step) {
+  var decimated = [];
+  for(i=step;i<data.length;i+=step) {
+    console.log('stepping...' + i);
+    var group = [data[i], data[i-1], data[i-2]].sort(function(a,b) {return b.y-a.y});
+    console.log(group);
+
+    if(group.includes('undefined')) {
+      break;
+    } else {
+      decimated.push(group[Math.floor((group.length - 1) / 2)]);
+    }
+    
+  }
+
+
+  console.log(decimated);
+  return decimated;
+}
+
 exports.makeFrequencyDict = function(data, cutoff) {
   var counts = {};
   var result = {};
   var cutStorage = cutoff;
 
-  if(cutoff == 'percentage') {
+  if(cutoff.type == 'percentage') {
     var highFreq = highestFrequencyinData(data)
-    cutStorage = (10.3 / 100) * highFreq;
-    console.log('15.2 percent of ' + highFreq  + ' is ' + cutStorage);
+    cutStorage = (cutoff.value / 100) * highFreq;
+    console.log(cutoff.value + ' percent of ' + highFreq  + ' is ' + cutStorage);
   }
 
   for (var i = 0; i < data.length; i++) {

@@ -221,7 +221,7 @@ function makeFrequencyDicts(data, tweetTypes, times, cutoffs) {
       return true;
     }
   });
-
+  console.log(times);
   console.log('making frequency dictionary with cutoffs:' + cutoffs);
 
   return {
@@ -229,7 +229,7 @@ function makeFrequencyDicts(data, tweetTypes, times, cutoffs) {
     emojis: helperFunctions.makeFrequencyDict(emojis, cutoffs.emojis),
     words: helperFunctions.makeFrequencyDict(data, cutoffs.words),
     types: helperFunctions.makeFrequencyDict(tweetTypes, 0),
-    times: times
+    times: helperFunctions.decimate(times, 3)
   };
 
 
@@ -483,8 +483,8 @@ awake();
 
 // setTimeout(function() { getRateLimit(0) }, 1000 * 1);
 //
-var options = {query:'love', count:1000, depth:1, childQueries:0, cutoffs:{words:'percentage', emojis:'percentage', hashtags:'percentage'}, tooLow:1}
+var options = {query:'love', count:17000, depth:1, childQueries:0, cutoffs:{words:{type:'percentage', value:2}, emojis:{type:'percentage', value:10}, hashtags:{type:'percentage', value:5}}, tooLow:1}
 //
 // setTimeout(function() { request(options) }, 1000 * 1);
-// setInterval(searchLoop, 1000 * 8);
-formatProduct('love8158');
+setInterval(searchLoop, 1000 * 4);
+formatProduct('love8512');
