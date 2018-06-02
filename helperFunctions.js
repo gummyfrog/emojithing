@@ -107,30 +107,46 @@ function highestFrequencyinData(data) {
   return p[0];
 }
 
+
 exports.decimate = function(data, step) {
   var decimated = [];
+
   for(i=step;i<data.length;i+=step) {
-    console.log('stepping...' + i);
-    var group = [data[i], data[i-1], data[i-2]].sort(function(a,b) {return b.y-a.y});
-    console.log(group);
+    // console.log('stepping...' + i);
+    var group = [];
 
-    if(group.includes('undefined')) {
-      break;
-    } else {
-      decimated.push(group[Math.floor((group.length - 1) / 2)]);
+    for(x=0;x<step;x++) {
+      group.push(data[i-x])
     }
-    
+    if(group.includes('undefined')) {
+      console.log('Hit Undefined');
+      break;
+    }
+
+    group.sort(function(a,b) {return b.y-a.y});
+    // median
+    // console.log(group[Math.floor((group.length - 1) / 2)])
+    // decimated.push(group[Math.floor((group.length - 1) / 2)]);
+
+    // average
+    var average = group.reduce(function (r, a) {
+        return r + a.y;
+        //    ^^^ use the last result without property
+    }, 0);
+    decimated.push({y:average, x: group[Math.floor((group.length - 1) / 2)].x })
+
+    console.log('assembled group of ' + group.length);
+
   }
-
-
-  console.log(decimated);
+  console.log('done decimating');
+  // console.log(decimated);
   return decimated;
 }
 
 exports.makeFrequencyDict = function(data, cutoff) {
   var counts = {};
   var result = {};
-  var cutStorage = cutoff;
+  var cutStorage = cutoff.value;
 
   if(cutoff.type == 'percentage') {
     var highFreq = highestFrequencyinData(data)

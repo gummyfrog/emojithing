@@ -221,15 +221,14 @@ function makeFrequencyDicts(data, tweetTypes, times, cutoffs) {
       return true;
     }
   });
-  console.log(times);
   console.log('making frequency dictionary with cutoffs:' + cutoffs);
 
   return {
     hashtags: helperFunctions.makeFrequencyDict(hashtags, cutoffs.hashtags),
     emojis: helperFunctions.makeFrequencyDict(emojis, cutoffs.emojis),
     words: helperFunctions.makeFrequencyDict(data, cutoffs.words),
-    types: helperFunctions.makeFrequencyDict(tweetTypes, 0),
-    times: helperFunctions.decimate(times, 3)
+    types: helperFunctions.makeFrequencyDict(tweetTypes, {type:'cutoff', value: 0}),
+    times: helperFunctions.decimate(times, 450)
   };
 
 
@@ -483,8 +482,8 @@ awake();
 
 // setTimeout(function() { getRateLimit(0) }, 1000 * 1);
 //
-var options = {query:'love', count:50000, depth:1, childQueries:0, cutoffs:{words:{type:'percentage', value:3.5}, emojis:{type:'percentage', value:10}, hashtags:{type:'percentage', value:15}}, tooLow:1}
+var options = {query:'#frontierairlines', count:10000, depth:2, childQueries:2, cutoffs:{words:{type:'percentage', value:3.5}, emojis:{type:'percentage', value:10}, hashtags:{type:'percentage', value:15}}, tooLow:-1}
 //
 // setTimeout(function() { request(options) }, 1000 * 1);
-setInterval(searchLoop, 1000 * 4);
-formatProduct('love8512');
+// setInterval(searchLoop, 1000 * 8);
+formatProduct('Frontier2675');
