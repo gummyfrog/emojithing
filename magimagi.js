@@ -482,8 +482,8 @@ awake();
 
 // setTimeout(function() { getRateLimit(0) }, 1000 * 1);
 //
-var options = {query:'#frontierairlines', count:10000, depth:2, childQueries:2, cutoffs:{words:{type:'percentage', value:3.5}, emojis:{type:'percentage', value:10}, hashtags:{type:'percentage', value:15}}, tooLow:-1}
+var options = {query:'#FridayFeeling', count:10000, depth:2, childQueries:2, cutoffs:{words:{type:'percentage', value:3.5}, emojis:{type:'percentage', value:10}, hashtags:{type:'percentage', value:15}}, tooLow:-1}
 //
 // setTimeout(function() { request(options) }, 1000 * 1);
 // setInterval(searchLoop, 1000 * 8);
-formatProduct('Frontier2675');
+// formatProduct('#FridayFeeling7193');
