@@ -94,23 +94,8 @@ exports.wordsFor = function(emoji, count) {
 
 }
 
-function highestFrequencyinData(data) {
-  var tempCounts = {};
-  for (var t = 0; t < data.length; t++) {
-      var num = data[t];
-      tempCounts[num] = tempCounts[num] ? tempCounts[num] + 1 : 1;
-  }
-  var p = Object.keys(tempCounts).map(i => tempCounts[i]).sort(function(a, b){
-      return b-a
-  })
-
-  return p[0];
-}
-
-
 exports.decimate = function(data, step) {
   var decimated = [];
-
   for(i=step;i<data.length;i+=step) {
     // console.log('stepping...' + i);
     var group = [];
@@ -119,7 +104,7 @@ exports.decimate = function(data, step) {
       group.push(data[i-x])
     }
     if(group.includes('undefined')) {
-      console.log('Hit Undefined');
+      // console.log('Hit Undefined');
       break;
     }
 
@@ -135,40 +120,10 @@ exports.decimate = function(data, step) {
     }, 0);
     decimated.push({y:average, x: group[Math.floor((group.length - 1) / 2)].x })
 
-    console.log('assembled group of ' + group.length);
+    // console.log('assembled group of ' + group.length);
 
   }
-  console.log('done decimating');
+  // console.log('done decimating');
   // console.log(decimated);
   return decimated;
-}
-
-exports.makeFrequencyDict = function(data, cutoff) {
-  var counts = {};
-  var result = {};
-  var cutStorage = cutoff.value;
-
-  if(cutoff.type == 'percentage') {
-    var highFreq = highestFrequencyinData(data)
-    cutStorage = (cutoff.value / 100) * highFreq;
-    console.log(cutoff.value + ' percent of ' + highFreq  + ' is ' + cutStorage);
-  }
-
-  for (var i = 0; i < data.length; i++) {
-      var num = data[i];
-      counts[num] = counts[num] ? counts[num] + 1 : 1;
-  }
-  for (key in counts) {
-    if (counts.hasOwnProperty(key) && counts[key] > cutStorage) {
-        result[key] = counts[key];
-    }
-  }
-
-  var backToArray = Object.keys(result).map(key => ({key:key,value:result[key]}) ).sort(function(a,b) {return b.value-a.value});
-  var backToObject = {};
-  for (var l=0; l<backToArray.length; l++) {
-    backToObject[backToArray[l].key] = backToArray[l].value;
-  }
-
-  return backToObject;
 }

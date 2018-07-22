@@ -1,12 +1,16 @@
-
 const fs = require('fs');
 var Twitter = require('twitter');
+const logUpdate = require('log-update');
 var jsonfile = require('jsonfile')
 var asyncLoop = require('node-async-loop');
 var onlyEmoji = require('emoji-aware').onlyEmoji;
 var emojiTree = require('emoji-tree');
 var moment = require('moment');
 moment().format();
+const searchInterval = 8;
+let i = 0;
+
+let frames = ["•••", "•••", "o••", "•o•", "••o", "•••", "o••", "oo•", "ooo", "ooo", "ooo", "•oo", "••o"];
 
 const helperFunctions = require('./helperFunctions.js');
 
@@ -22,7 +26,7 @@ function getRateLimit(client) {
     if(error) {
       console.log('Hit the rate limit for Rate Limit checks.')
     } else {
-    console.log(' ⧖ ' + 'Client #' + client + ' : ' + response.resources.search['/search/tweets'].remaining + ' / 450');
+    console.log(' ⧖ Client #' + client + ' : ' + response.resources.search['/search/tweets'].remaining + ' / 450');
     }
   });
 }
@@ -34,9 +38,9 @@ function getEmojisFromString(string) {
 
 function initializeClients(clientsArray) {
   fs.readdir('./clients', function (err, files) {
-    console.log('Entered ./clients')
+    console.log(' + Entered ./clients')
     for(i=1; i<files.length-1; i++) {
-      console.log('Reading / ' + files[i]);
+      console.log(' | Reading / ' + files[i]);
       jsonfile.readFile('./clients/' + files[i], function(err, obj) {
         var client = new Twitter(obj);
         clientsArray.push(client);
@@ -49,7 +53,7 @@ function initializeClients(clientsArray) {
 function deoccupyclient(client) {
   // console.log('Index of ' + client + ' is ' + occupiedClientNumbers.indexOf(client));
   occupiedClientNumbers.splice(occupiedClientNumbers.indexOf(client), 1);
-  console.log('   Deoccupied Client #' + client);
+  // console.log('   Deoccupied Client #' + client);
 }
 
 function occupyclient() {
@@ -88,32 +92,6 @@ function findObj(objects, key, value) {
 }
 
 function request(options) {
-
-
-  // cutoff == least number of times a word must be used to be considered data
-  // toolow == how many tweets per search is considered low frequency
-
-  // query
-  // origin
-
-  // desired tweetcount
-  // desired depth
-  // desired sub data count modifier
-  // desired sub data spawns
-
-  // low frequency definition
-  // exclude retweets
-  // hashtag length cutoff
-  // word length cutoff
-
-  // parentfilename
-  // requestparent
-
-  // if (fs.existsSync('./magimagi/requests/query-' + query + '.json')) {
-  //   console.log('   > A request for ' + query + ' already exists.')
-  //   return;
-  // }
-
   var filename;
   if(options.hasOwnProperty('isChild') && options.isChild == true) {
     filename = generateFileName(options.query, options.requestParent, options.parentFileName);
@@ -127,37 +105,56 @@ function request(options) {
 
 
   var assignedClient = occupyclient();
-
+  var startTime = undefined;
   if(assignedClient == -1) {
-    console.log('   > Request for ' + options.query)
+    console.log('\n + Request for ' + options.query + '\n | LIMBO')
   } else {
-    console.log('   > Request for ' + options.query + ' | #' + assignedClient)
+    console.log('\n + Request for ' + options.query + '\n | ' + assignedClient)
+    startTime = moment();
   }
+
+  // obj.children.push(request({query: topHashtags[x].key, count: obj.count/1.2, depth: obj.config.depth, currentDepth: obj.currentDepth+1, childQueries: obj.config.childQueries, parentFileName:obj.parentFileName, requestParent: obj.query, cutoffs: obj.cutoffs, tooLow: obj.config.tooLow, isChild: true}))
 
   jsonfile.writeFileSync('./magimagi/requests/query-' + filename + '.json',
   {
-    _query: options.query,
-    _filename: filename,
-    _clientNum: assignedClient,
-    _count: options.count,
-    _cutoffs: options.cutoffs,
-    _childQueries: options.childQueries,
-    _excludeRetweets: options._excludeRetweets,
-    _tooLow: options.tooLow,
+    // configured at the start
+    config: {
+      cutoffs: options.config.cutoffs,
+      childQueries: options.config.childQueries,
+      excludeRetweets: options.config.excludeRetweets,
+      tooLow: options.config.tooLow,
+      depth: options.config.depth
+    },
+
+    // these are outside of config because they are changed at each child.
+    query: options.query,
+    count: options.count,
+
+    // only used if isChild == true
+    isChild: options.isChild,
+
+    currentDepth: options.currentDepth,
+    parentFileName: options.parentFileName,
+    requestParent: options.requestParent,
+
+    filename: filename,
+    clientNum: assignedClient,
+
+    requestTime: moment(),
+    startTime: startTime,
+    endTime: undefined,
+
     // consolidate into options{}?
     collectedTweets: 0,
     data: {},
 
-    _depth: options.depth,
-    currentDepth: options.currentDepth,
-
-    parentFileName: options.parentFileName,
-    requestParent: options.requestParent,
-    isChild: options.isChild,
     children: [],
     // popularTweets: [],
     hashtagObjs: [],
 
+
+    window_count: 0,
+    tweets_per_window: 0,
     temp_popular_tweets: [],
     uniques: [],
     low_frequency: false,
@@ -172,31 +169,28 @@ function request(options) {
     }
   });
 
+  console.log(' | ' + filename);
   return filename;
 }
 
 function awake() {
   initializeClients(clients);
   fs.readdir('./magimagi/requests', function (err, files) {
-    if(files.length <= 1) {
-      console.log('No requests found!')
+    if(files.length <= 2) {
+      console.log(' o No requests found!')
       return;
     }
 
-
-    for(i=1;i<files.length;i++) {
+    for(i=2;i<files.length;i++) {
       jsonfile.readFile('./magimagi/requests/' + files[i], function(err, obj) {
-          if(err) throw err;
-
-          if(obj._clientNum != -1) {
-            occupiedClientNumbers.push(obj._clientNum);
-          }
+        if(err) throw err;
+        if(obj.clientNum != -1) {
+          occupiedClientNumbers.push(obj.clientNum);
+        }
       });
     }
-
   });
 }
-
 
 function wordsFor(dict, count) {
   var data = Object.keys(dict).map(key => {
@@ -211,45 +205,127 @@ function wordsFor(dict, count) {
   return data.slice(0, count);
 }
 
+
+function makeFrequencyDict(data, cutoff) {
+    var counts = {};
+    var result = {};
+    var cutStorage = cutoff.value;
+
+    logUpdate(' √ Made Dictionary from ' + data.length + ' items...')
+
+    if(cutoff.type == 'percentage') {
+      var highFreq = highestFrequencyinData(data)
+      cutStorage = (cutoff.value / 100) * highFreq;
+      // console.log(cutoff.value + ' percent of ' + highFreq  + ' is ' + cutStorage);
+    }
+
+    for (var i = 0; i < data.length; i++) {
+        var num = data[i];
+        counts[num] = counts[num] ? counts[num] + 1 : 1;
+    }
+    for (key in counts) {
+      if (counts.hasOwnProperty(key) && counts[key] > cutStorage) {
+          result[key] = counts[key];
+      }
+    }
+
+    var backToArray = Object.keys(result).map(key => ({key:key,value:result[key]}) ).sort(function(a,b) {return b.value-a.value});
+    var backToObject = {};
+    for (var l=0; l<backToArray.length; l++) {
+      backToObject[backToArray[l].key] = backToArray[l].value;
+    }
+
+
+    return(backToObject);
+}
+
+function highestFrequencyinData(data) {
+  var tempCounts = {};
+  for (var t = 0; t < data.length; t++) {
+      var num = data[t];
+      tempCounts[num] = tempCounts[num] ? tempCounts[num] + 1 : 1;
+  }
+  var p = Object.keys(tempCounts).map(i => tempCounts[i]).sort(function(a, b){
+      return b-a
+  })
+
+  return p[0];
+}
+
 function makeFrequencyDicts(words, tweetTypes, times, popular, cutoffs) {
 
-  let hashtags = words.filter(obj => obj[0] == '#');
-  let emojis = [].concat.apply([], words.filter(string => onlyEmoji(string).length >= 1).map(string => getEmojisFromString(string)));
+    var startTime = moment();
+    console.log('\n\n + Please wait a moment... \n | This process takes a bit of time.')
 
-  words = words.filter( function(string) {
-    if(string[0] != '#' && onlyEmoji(string).length == 0) {
-      return true;
-    }
-  });
+    logUpdate(' : Collecting Hashtags...')
 
-  console.log('making frequency dictionary with cutoffs:' + cutoffs);
+    let hashtags = words.filter(function(obj) {
+      i += 0.001;
+      const frame = frames[Math.floor(i) % frames.length];
+      logUpdate(` ${frame} Collecting Hashtags...`)
+      if(obj[0] == '#') {
+        logUpdate(` ${frame} Collecting Hashtags..`)
+        return true;
+      }
+    });
+    logUpdate(' √ Collecting Hashtags')
+    console.log(' : Stripping Emojis...')
 
-  return {
-    popular: popular,
-    hashtags: helperFunctions.makeFrequencyDict(hashtags, cutoffs.hashtags),
-    emojis: helperFunctions.makeFrequencyDict(emojis, cutoffs.emojis),
-    words: helperFunctions.makeFrequencyDict(words, cutoffs.words),
-    types: helperFunctions.makeFrequencyDict(tweetTypes, {type:'cutoff', value: 0}),
-    times: helperFunctions.decimate(times, 450)
-  };
+    let emojis = [].concat.apply([], words.filter(function(string){
+      i += 0.001;
+      const frame = frames[Math.floor(i) % frames.length];
+      logUpdate(` ${frame} Stripping Emojis...`)
+      if(onlyEmoji(string).length >= 1) {
+        logUpdate(` ${frame} Stripping Emojis..`)
+        return true;
+      }
+    }).map(string => getEmojisFromString(string)));
 
+    logUpdate(' √ Stripping Emojis')
+    console.log(' : Stripping Words...')
 
+    words = words.filter( function(string) {
+      i += 0.001;
+      const frame = frames[Math.floor(i) % frames.length];
+      logUpdate(
+        ` ${frame} Stripping Words...`
+      );
+      if(string[0] != '#' && onlyEmoji(string).length == 0) {
+        logUpdate(` ${frame} Stripping Words..`)
+        return true;
+      }
+    });
 
+    logUpdate(' √ Collecting Words')
+    console.log(' | Done processing raw data.')
+    console.log(' | Took ' + moment().from(startTime, true));
+    console.log(' @ Making Dictionaries...')
+
+    return({
+      popular: popular,
+      hashtags:makeFrequencyDict(hashtags, cutoffs.hashtags),
+      emojis:makeFrequencyDict(emojis, cutoffs.emojis),
+      words:makeFrequencyDict(words, cutoffs.words),
+      types:makeFrequencyDict(tweetTypes, {type:'cutoff', value: 0}),
+      times:helperFunctions.decimate(times, 450)
+    })
 }
 
 
 function requestComplete(obj) {
-  console.log(' - ' + obj._query + ' is done.');
-  deoccupyclient(obj._clientNum)
-  obj.data = makeFrequencyDicts(obj.temp_wordpool, obj.temp_tweetTypes, obj.temp_times, obj.temp_popular_tweets, obj._cutoffs);
-  obj.temp_wordpool = [];
-  var topHashtags = wordsFor(obj.data.hashtags, obj._childQueries);
 
-  if(obj.currentDepth != obj._depth) {
+  jsonfile.writeFileSync('./magimagi/requests/incomplete_backups/query-' + obj.filename + '.json', obj);
+  deoccupyclient(obj.clientNum)
+
+  obj.data = makeFrequencyDicts(obj.temp_wordpool, obj.temp_tweetTypes, obj.temp_times, obj.temp_popular_tweets, obj.config.cutoffs)
+  obj.temp_wordpool = [];
+  var topHashtags = wordsFor(obj.data.hashtags, obj.config.childQueries);
+
+  if(obj.currentDepth != obj.config.depth) {
     console.log(' X Requesting ' + topHashtags.length + ' more searches.');
     for(x=0;x<topHashtags.length;x++) {
-      if(topHashtags[x].key.toLowerCase() != obj.parentFileName.toLowerCase() && topHashtags[x].key.toLowerCase() != obj._query.toLowerCase()) {
-        obj.children.push(request({query: topHashtags[x].key, count: obj._count/1.2, depth: obj._depth, currentDepth: obj.currentDepth+1, parentFileName:obj.parentFileName, requestParent: obj._query, cutoffs: obj._cutoffs, tooLow: obj.tooLow, isChild: true}))
+      if(topHashtags[x].key.toLowerCase() != obj.parentFileName.toLowerCase() && topHashtags[x].key.toLowerCase() != obj.query.toLowerCase()) {
+        obj.children.push(request({query: topHashtags[x].key, count: obj.count/1.2, currentDepth: obj.currentDepth+1, isChild:true, parentFileName:obj.parentFileName, requestParent: obj.query, config:obj.config}))
       }
     }
   } else {
@@ -258,63 +334,68 @@ function requestComplete(obj) {
   }
 
   delete obj.uniques;
-  delete obj._currentDepth;
+  delete obj.currentDepth;
   delete obj.temp_wordpool;
   delete obj.temp_usableTweets;
   delete obj.temp_tweetTypes;
   delete obj.temp_times;
   delete obj.temp_popular_tweets;
-
+  obj.endTime = moment();
 
   if(obj.isChild) {
     let parentObj = jsonfile.readFileSync('./magimagi/products/product-' + obj.parentFileName + '.json');
     parentObj.hashtagObjs.push(obj);
-    jsonfile.writeFileSync('./magimagi/products/product-' + parentObj._filename + '.json', parentObj);
+    jsonfile.writeFileSync('./magimagi/products/product-' + parentObj.filename + '.json', parentObj);
   } else {
-    jsonfile.writeFileSync('./magimagi/products/product-' + obj._filename + '.json', obj);
+    jsonfile.writeFileSync('./magimagi/products/product-' + obj.filename + '.json', obj);
   }
 
-  if(fs.existsSync('./magimagi/requests/query-' + obj._filename + '.json')) {
-    console.log(' - Unlinking ' + obj._filename);
-    fs.unlinkSync('./magimagi/requests/query-' + obj._filename + '.json');
+  if(fs.existsSync('./magimagi/requests/query-' + obj.filename + '.json')) {
+    console.log(' - Unlinking ' + obj.filename);
+    fs.unlinkSync('./magimagi/requests/query-' + obj.filename + '.json');
   } else {
-    console.log(' - Was already unlinked. Ghost request.')
+    // console.log(' - Was already unlinked. Ghost request.')
   }
 
 };
 
-function formatProduct(product) {
+// this combines all the hashtag children objs into a tree view.
+// not an essential step for testing.
+// collapse before uploading to view site
+
+function collapseProduct(product) {
   jsonfile.readFile('./magimagi/products/product-' + product + '.json', function(err, obj) {
     if (err) throw err;
 
     delete obj.parentFileName;
     delete obj.requestParent;
 
-    delete obj._clientNum;
-    delete obj._depth;
+    delete obj.clientNum;
+    delete obj.config.depth;
     // delete obj.currentDepth;
-    // delete obj._filename;
-    delete obj._count;
+    // delete obj.filename;
+    delete obj.count;
     delete obj.isChild;
-
+    delete obj.uniques;
     // delete obj.temp_popular_tweets;
-    delete obj._cutoffs;
-    delete obj._childQueries;
-    delete obj._tooLow;
+    delete obj.config.cutoffs;
+    delete obj.config.childQueries;
+    delete obj.config.tooLow;
 
     for(var key in obj.hashtagObjs) {
       delete obj.hashtagObjs[key].parentFileName;
       delete obj.hashtagObjs[key].requestParent;
-      delete obj.hashtagObjs[key]._clientNum;
-      delete obj.hashtagObjs[key]._depth;
+      delete obj.hashtagObjs[key].clientNum;
+      delete obj.hashtagObjs[key].config.depth;
+      delete obj.hashtagObjs[key].uniques;
       // delete obj.hashtagObjs[key].currentDepth;
       // delete obj.hashtagObjs[key]._filename;
-      delete obj.hashtagObjs[key]._count;
+      delete obj.hashtagObjs[key].count;
       delete obj.hashtagObjs[key].isChild;
       // delete obj.hashtagObjs[key].temp_popular_tweets;
-      delete obj.hashtagObjs[key]._cutoffs;
-      delete obj.hashtagObjs[key]._childQueries;
-      delete obj.hashtagObjs[key]._tooLow;
+      delete obj.hashtagObjs[key].config.cutoffs;
+      delete obj.hashtagObjs[key].config.childQueries;
+      delete obj.hashtagObjs[key].config.tooLow;
 
     }
 
@@ -326,6 +407,7 @@ function formatProduct(product) {
 
   });
 }
+
 
 
 function trimData(data) {
@@ -354,13 +436,13 @@ function formatHashtagObjs(objArray) {
     var hashtag = objArray[x];
     // console.log(' § '+hashtag._filename + ' ' + hashtag.currentDepth + '   [' + hashtag.children + ']');
     for(j=0;j<hashtag.children.length;j++) {
-      // delete hashtag._filename;
-      var indexOfChild = findObj(objArray, '_filename', hashtag.children[j]);
+      // delete has/htag._filename;
+      var indexOfChild = findObj(objArray, 'filename', hashtag.children[j]);
       var childObj = objArray[indexOfChild];
       if (childObj == undefined) {
         // console.log("Couldn't find child: " + hashtag.children[j]);
       } else {
-        // console.log('    √ ' +childObj._filename + ' ' + childObj.currentDepth + ' is child of ' + hashtag._filename)
+        // console.log('    √ ' +childobj.filename + ' ' + childObj.currentDepth + ' is child of ' + hashtag._filename)
         if(childObj.hasOwnProperty('data')) {
           trimData(childObj.data)
         };
@@ -378,26 +460,27 @@ function searchLoop() {
   console.log(' ⧗ ' + moment().format("MMM Do, h:mm:ss a"))
   console.log(occupiedClientNumbers);
   fs.readdir('./magimagi/requests', function (err, files) {
-    console.log('Entered /requests')
+    console.log(' + Entered /requests')
     if(files.length <= 1) {
-      console.log('No requests found!')
+      console.log(' o No requests found!')
       return;
     }
 
-    for(i=1;i<files.length;i++) {
+    for(i=2;i<files.length;i++) {
       // console.log(i + ' / ' + files.length);
       jsonfile.readFile('./magimagi/requests/' + files[i], function(err, obj) {
         if(obj == undefined) {
-          console.log('Invalid file.');
+          console.log(' e Invalid file.');
           return;
         }
 
-        if(obj._clientNum == -1) {
-          obj._clientNum = occupyclient();
-          if(obj._clientNum == -1) {
+        if(obj.clientNum == -1) {
+          obj.clientNum = occupyclient();
+          if(obj.clientNum == -1) {
             return;
           } else {
-            console.log(' + Brought ' + obj._query + ' out of limbo.');
+            console.log(' O Brought ' + obj.query + ' out of limbo.');
+            obj.startTime = moment();
           }
         }
 
@@ -406,22 +489,42 @@ function searchLoop() {
 
 
         // searching
-        console.log(' * Searching Twitter for ' + obj._query + ' with Client #' + obj._clientNum);
 
-        // getRateLimit(obj._clientNum);
-        clients[obj._clientNum].get('search/tweets', {q: obj._query, result_type: 'recent', lang: 'en', count: 100}, function(error, tweets, response) {
+
+
+        console.log(' | Searching Twitter for ' + obj.query + ' with Client #' + obj.clientNum);
+        var reset = '???';
+
+        if(obj.nextWindow == null || obj.nextWindow == 'err' || obj.nextWindow == undefined || obj.nextWindow == 0) {
+          clients[obj.clientNum].get('application/rate_limit_status', {}, function(error, data, response) {
+            // console.log('getting new time...')
+            if(error) {
+              console.error(error);
+              obj.nextWindow = 'err'
+            } else {
+              obj.nextWindow = data.resources.search['/search/tweets'].reset;
+              // console.log(moment.unix(obj.nextWindow))
+              // console.log(moment(moment.unix(obj.nextWindow).diff(moment())).format('mm:ss') )
+            }
+          });
+        } else {
+          reset = moment(moment.unix(obj.nextWindow).diff(moment())).format('mm:ss')
+        }
+
+        // getRateLimit(obj.clientNum);
+        clients[obj.clientNum].get('search/tweets', {q: obj.query, result_type: 'recent', lang: 'en', count: 100}, function(error, tweets, response) {
           if(error) {
-            console.log(obj._clientNum + ' ran out of requests.');
-            console.log(getRateLimit(obj._clientNum))
+            console.log(obj.clientNum + ' ran out of requests.');
+            console.log(getRateLimit(obj.clientNum))
             return;
           }
 
           if(tweets.statuses.length == 0) {
-              console.log('No tweets found for ' + obj._query + '. What? Unlinking.');
-              deoccupyclient(obj._clientNum);
-              if(fs.existsSync('./magimagi/requests/query-' + obj._filename + '.json')) {
-                console.log(' - Unlinking ' + obj._filename);
-                fs.unlinkSync('./magimagi/requests/query-' + obj._filename + '.json');
+              console.log('No tweets found for ' + obj.query + '. What? Unlinking.');
+              deoccupyclient(obj.clientNum);
+              if(fs.existsSync('./magimagi/requests/query-' + obj.filename + '.json')) {
+                console.log(' - Unlinking ' + obj.filename);
+                fs.unlinkSync('./magimagi/requests/query-' + obj.filename + '.json');
               }
               return;
           }
@@ -445,6 +548,7 @@ function searchLoop() {
               }
 
               obj.temp_usableTweets += 1
+              obj.tweets_this_window += 1;
               obj.collectedTweets += 1;
               obj.uniques.push(item.user.id_str);
               helperFunctions.sterilizeTweet(item.text, obj.temp_wordpool, commons);
@@ -454,29 +558,55 @@ function searchLoop() {
           });
 
           // console.log('Asyncloop done.');
-          console.log('\n' + ' ∞ ' + obj._query + ' @ ' + obj.currentDepth + ' / ' + obj._depth);
-          console.log('   ' + obj.collectedTweets + ' / ' + obj._count);
-          console.log(' + ' + obj.temp_usableTweets + ' / ' + tweets.statuses.length);
-          console.log('\n');
-          if(obj.temp_usableTweets <= obj._tooLow) {
-            obj.low_frequency = true;
+          if(obj.window_count == 0) {
+            obj.window_average = obj.collectedTweets / 1;
+          } else {
+            obj.window_average = obj.collectedTweets / obj.window_count;
           }
-          obj.temp_times.push({y:obj.temp_usableTweets, x: moment().format('X')});
+
+          if(parseInt(reset.substring(0,2)) == 0 && parseInt(reset.substring(3, 5)) < searchInterval) {
+            obj.window_count+=1;
+            obj.nextWindow = null;
+            obj.temp_times.push({y:obj.tweets_this_window, x: moment().format('X')});
+            obj.tweets_this_window = 0;
+
+            if(obj.window_average <= obj.config.tooLow) {
+              console.log(' ! ' + obj.query + ' has a low window average frequency.')
+              obj.low_frequency = true;
+            }
+
+          }
+          if(parseInt(reset.substring(0,2)) > 15) {
+            obj.nextWindow = null;
+          }
+
+
+          var estimatedCompletion = ((((obj.count - obj.collectedTweets) / obj.window_average) + obj.window_count) * 15);
+
+          if(moment().isAfter(moment(estimatedCompletion))) {
+            estimatedCompletion = ((((obj.count - obj.collectedTweets) / obj.window_average) + obj.window_count+2) * 15);
+          }
+
+          console.log('\n + ∞ ' + obj.query + ' @ ' + obj.currentDepth + ' / ' + obj.config.depth + ' / (' + obj.filename + ')');
+          console.log(' |   ' + obj.collectedTweets + ' / ' + Math.floor(obj.count));
+          console.log(' | Σ ' + Math.ceil(obj.window_average) + '(' + obj.window_count +') > ' + obj.config.tooLow);
+          console.log(' | + ' + obj.temp_usableTweets + ' / ' + tweets.statuses.length);
+          console.log(' | \n | ☇ ' + reset)
+          console.log(' | ⧗ ' + moment(obj.startTime).toNow(true))
+          console.log(' | ⧗ ' + moment(moment(obj.startTime).add(estimatedCompletion, 'minutes')).fromNow());
+
           obj.temp_usableTweets = 0;
 
-
-          if(obj.collectedTweets >= obj._count || obj.low_frequency) {
-            // this request is complete. Check what happens to the data.
+          if(obj.collectedTweets >= obj.count || obj.low_frequency) {
+            // this request is complete.
             if(obj.low_frequency) {
-              console.log(obj._query + ' is low freq.')
-            } else {
-              console.log(obj._query + ' is Complete!')
+              console.log(' ! ' + obj.query + ' has a low frequency.')
             }
             requestComplete(obj);
             return;
           }
 
-          jsonfile.writeFileSync('./magimagi/requests/query-' + obj._filename + '.json', obj);
+          jsonfile.writeFileSync('./magimagi/requests/query-' + obj.filename + '.json', obj);
 
         });
 
@@ -488,13 +618,47 @@ function searchLoop() {
 
 
 
-awake();
-// setTimeout(function() { request("love", 200, 3) }, 1000 * 1);
 
 // setTimeout(function() { getRateLimit(0) }, 1000 * 1);
-//
-var options = {query:'love', count:10000, depth:2, childQueries:3, cutoffs:{words:{type:'percentage', value:2.5}, emojis:{type:'percentage', value:7}, hashtags:{type:'percentage', value:10}}, tooLow:-1}
 
-setTimeout(function() { request(options) }, 1000 * 1);
-setInterval(searchLoop, 1000 * 8);
-// formatProduct('love6204');
+// recommended pareto-form values:
+// words: 2.5%
+// emojis: 7%
+// hashtags: 10%
+
+awake();
+// obj.children.push(request({query: topHashtags[x].key, count: obj.count/1.2, depth: obj.config.depth, currentDepth: obj.currentDepth+1, childQueries: obj.config.childQueries, parentFileName:obj.parentFileName, requestParent: obj.query, cutoffs: obj.cutoffs, tooLow: obj.config.tooLow, isChild: true}))
+
+var options = {
+  query: 'love',
+  count: 35000,
+  config: {
+    depth: 1,
+    childQueries:3,
+    cutoffs:{
+      words:{
+        type:'percentage',
+        value:2.5
+      },
+      emojis:{
+        type:'percentage',
+        value:7
+      },
+      hashtags:{
+        type:'percentage',
+        value:10
+      },
+      decimate:{
+        step: 4,
+      }
+    },
+    tooLow: 200
+  }
+};
+// setTimeout(function() { request(options) }, 1000 * 1);
+
+// decimate step is in window intervals: 4 windows = 1 hour, 1 window = 15m
+
+
+setInterval(searchLoop, 1000 * searchInterval);
+// collapseProduct('love9056');
