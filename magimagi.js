@@ -118,6 +118,28 @@ function request(options) {
   jsonfile.writeFileSync('./magimagi/requests/query-' + filename + '.json',
   {
     // configured at the start
+
+    // these are outside of config because they are changed at each child.
+    query: options.query,
+    filename: filename,
+    low_frequency: false,
+    count: options.count,
+    collectedTweets: 0,
+
+    clientNum: assignedClient,
+    // only used if isChild == true
+    isChild: options.isChild,
+    currentDepth: options.currentDepth,
+    parentFileName: options.parentFileName,
+    requestParent: options.requestParent,
+
+    temp_popular_tweets: [],
+    uniques: [],
+    temp_tweetTypes: [],
+    temp_wordpool: [],
+    temp_usableTweets: 0,
+    temp_times: [],
+
     config: {
       cutoffs: options.config.cutoffs,
       childQueries: options.config.childQueries,
@@ -126,42 +148,25 @@ function request(options) {
       depth: options.config.depth
     },
 
-    // these are outside of config because they are changed at each child.
-    query: options.query,
-    count: options.count,
 
-    // only used if isChild == true
-    isChild: options.isChild,
-
-    currentDepth: options.currentDepth,
-    parentFileName: options.parentFileName,
-    requestParent: options.requestParent,
-
-    filename: filename,
-    clientNum: assignedClient,
-
-    requestTime: moment(),
-    startTime: startTime,
-    endTime: undefined,
-
-    // consolidate into options{}?
-    collectedTweets: 0,
     data: {},
-
     children: [],
-    // popularTweets: [],
     hashtagObjs: [],
 
 
-    window_count: 0,
-    tweets_per_window: 0,
-    temp_popular_tweets: [],
-    uniques: [],
-    low_frequency: false,
-    temp_tweetTypes: [],
-    temp_wordpool: [],
-    temp_usableTweets: 0,
-    temp_times: []
+
+    searchInfo: {
+      window_count: 1,
+      requestTime: moment(),
+      startTime: startTime,
+      endTime: undefined,
+    },
+
+
+    // consolidate into options{}?
+    // popularTweets: [],
+
+
 
   }, function (err) {
     if(err) {
@@ -307,7 +312,7 @@ function makeFrequencyDicts(words, tweetTypes, times, popular, cutoffs) {
       emojis:makeFrequencyDict(emojis, cutoffs.emojis),
       words:makeFrequencyDict(words, cutoffs.words),
       types:makeFrequencyDict(tweetTypes, {type:'cutoff', value: 0}),
-      times:helperFunctions.decimate(times, 450)
+      times:helperFunctions.decimate(times, cutoffs.decimate.step)
     })
 }
 
@@ -325,7 +330,7 @@ function requestComplete(obj) {
     console.log(' X Requesting ' + topHashtags.length + ' more searches.');
     for(x=0;x<topHashtags.length;x++) {
       if(topHashtags[x].key.toLowerCase() != obj.parentFileName.toLowerCase() && topHashtags[x].key.toLowerCase() != obj.query.toLowerCase()) {
-        obj.children.push(request({query: topHashtags[x].key, count: obj.count/1.2, currentDepth: obj.currentDepth+1, isChild:true, parentFileName:obj.parentFileName, requestParent: obj.query, config:obj.config}))
+        obj.children.push(request({query: topHashtags[x].key, count: obj.count/2, currentDepth: obj.currentDepth+1, isChild:true, parentFileName:obj.parentFileName, requestParent: obj.query, config:obj.config}))
       }
     }
   } else {
@@ -333,14 +338,8 @@ function requestComplete(obj) {
     delete obj.hashtagObjs;
   }
 
-  delete obj.uniques;
-  delete obj.currentDepth;
-  delete obj.temp_wordpool;
-  delete obj.temp_usableTweets;
-  delete obj.temp_tweetTypes;
-  delete obj.temp_times;
-  delete obj.temp_popular_tweets;
-  obj.endTime = moment();
+
+  obj.searchInfo.endTime = moment();
 
   if(obj.isChild) {
     let parentObj = jsonfile.readFileSync('./magimagi/products/product-' + obj.parentFileName + '.json');
@@ -369,33 +368,33 @@ function collapseProduct(product) {
 
     delete obj.parentFileName;
     delete obj.requestParent;
-
     delete obj.clientNum;
-    delete obj.config.depth;
-    // delete obj.currentDepth;
-    // delete obj.filename;
-    delete obj.count;
+    delete obj.config.cutoffs;
     delete obj.isChild;
     delete obj.uniques;
-    // delete obj.temp_popular_tweets;
-    delete obj.config.cutoffs;
-    delete obj.config.childQueries;
-    delete obj.config.tooLow;
+    delete obj.nextWindow;
+    delete obj.tweets_this_window;
+    delete obj.temp_wordpool;
+    delete obj.temp_usableTweets;
+    delete obj.temp_tweetTypes;
+    delete obj.temp_times;
+    delete obj.temp_popular_tweets;
 
     for(var key in obj.hashtagObjs) {
       delete obj.hashtagObjs[key].parentFileName;
       delete obj.hashtagObjs[key].requestParent;
       delete obj.hashtagObjs[key].clientNum;
-      delete obj.hashtagObjs[key].config.depth;
-      delete obj.hashtagObjs[key].uniques;
-      // delete obj.hashtagObjs[key].currentDepth;
-      // delete obj.hashtagObjs[key]._filename;
-      delete obj.hashtagObjs[key].count;
-      delete obj.hashtagObjs[key].isChild;
-      // delete obj.hashtagObjs[key].temp_popular_tweets;
       delete obj.hashtagObjs[key].config.cutoffs;
-      delete obj.hashtagObjs[key].config.childQueries;
-      delete obj.hashtagObjs[key].config.tooLow;
+      delete obj.hashtagObjs[key].isChild;
+      delete obj.hashtagObjs[key].uniques;
+      delete obj.hashtagObjs[key].nextWindow;
+      delete obj.hashtagObjs[key].tweets_this_window;
+      delete obj.hashtagObjs[key].temp_wordpool;
+      delete obj.hashtagObjs[key].temp_usableTweets;
+      delete obj.hashtagObjs[key].temp_tweetTypes;
+      delete obj.hashtagObjs[key].temp_times;
+      delete obj.hashtagObjs[key].temp_popular_tweets;
+
 
     }
 
@@ -434,7 +433,7 @@ function formatHashtagObjs(objArray) {
 
   for(x=0;x<objArray.length;x++) {
     var hashtag = objArray[x];
-    // console.log(' § '+hashtag._filename + ' ' + hashtag.currentDepth + '   [' + hashtag.children + ']');
+    console.log(' § '+hashtag.filename + ' ' + hashtag.currentDepth + '   [' + hashtag.children + ']');
     for(j=0;j<hashtag.children.length;j++) {
       // delete has/htag._filename;
       var indexOfChild = findObj(objArray, 'filename', hashtag.children[j]);
@@ -480,7 +479,7 @@ function searchLoop() {
             return;
           } else {
             console.log(' O Brought ' + obj.query + ' out of limbo.');
-            obj.startTime = moment();
+            obj.searchInfo.startTime = moment();
           }
         }
 
@@ -558,19 +557,17 @@ function searchLoop() {
           });
 
           // console.log('Asyncloop done.');
-          if(obj.window_count == 0) {
-            obj.window_average = obj.collectedTweets / 1;
-          } else {
-            obj.window_average = obj.collectedTweets / obj.window_count;
-          }
+
+          obj.searchInfo.window_average = obj.collectedTweets / obj.searchInfo.window_count;
+
 
           if(parseInt(reset.substring(0,2)) == 0 && parseInt(reset.substring(3, 5)) < searchInterval) {
-            obj.window_count+=1;
+            obj.searchInfo.window_count+=1;
             obj.nextWindow = null;
             obj.temp_times.push({y:obj.tweets_this_window, x: moment().format('X')});
             obj.tweets_this_window = 0;
 
-            if(obj.window_average <= obj.config.tooLow) {
+            if(obj.searchInfo.window_average <= obj.config.tooLow) {
               console.log(' ! ' + obj.query + ' has a low window average frequency.')
               obj.low_frequency = true;
             }
@@ -581,24 +578,26 @@ function searchLoop() {
           }
 
 
-          var estimatedCompletion = ((((obj.count - obj.collectedTweets) / obj.window_average) + obj.window_count) * 15);
+          var estimatedCompletion = ((((obj.count - obj.collectedTweets) / obj.searchInfo.window_average) + obj.searchInfo.window_count) * 15);
 
           if(moment().isAfter(moment(estimatedCompletion))) {
-            estimatedCompletion = ((((obj.count - obj.collectedTweets) / obj.window_average) + obj.window_count+2) * 15);
+            estimatedCompletion = ((((obj.count - obj.collectedTweets) / obj.searchInfo.window_average) + obj.searchInfo.window_count+2) * 15);
           }
 
           console.log('\n + ∞ ' + obj.query + ' @ ' + obj.currentDepth + ' / ' + obj.config.depth + ' / (' + obj.filename + ')');
           console.log(' |   ' + obj.collectedTweets + ' / ' + Math.floor(obj.count));
-          console.log(' | Σ ' + Math.ceil(obj.window_average) + '(' + obj.window_count +') > ' + obj.config.tooLow);
+          console.log(' | Σ ' + Math.ceil(obj.searchInfo.window_average) + '(' + obj.searchInfo.window_count +') > ' + obj.config.tooLow);
           console.log(' | + ' + obj.temp_usableTweets + ' / ' + tweets.statuses.length);
           console.log(' | \n | ☇ ' + reset)
-          console.log(' | ⧗ ' + moment(obj.startTime).toNow(true))
-          console.log(' | ⧗ ' + moment(moment(obj.startTime).add(estimatedCompletion, 'minutes')).fromNow());
+          console.log(' | ⧗ ' + moment(obj.searchInfo.startTime).toNow(true))
+          console.log(' | ⧗ ' + moment(moment(obj.searchInfo.startTime).add(estimatedCompletion, 'minutes')).fromNow());
 
           obj.temp_usableTweets = 0;
 
           if(obj.collectedTweets >= obj.count || obj.low_frequency) {
             // this request is complete.
+            obj.temp_times.push({y:obj.tweets_this_window, x: moment()});
+
             if(obj.low_frequency) {
               console.log(' ! ' + obj.query + ' has a low frequency.')
             }
@@ -631,34 +630,34 @@ awake();
 
 var options = {
   query: 'love',
-  count: 35000,
+  count: 200,
   config: {
-    depth: 1,
-    childQueries:3,
+    depth: 2,
+    childQueries:0,
     cutoffs:{
       words:{
         type:'percentage',
-        value:2.5
+        value:50
       },
       emojis:{
         type:'percentage',
-        value:7
+        value:10
       },
       hashtags:{
         type:'percentage',
-        value:10
+        value:30
       },
       decimate:{
-        step: 4,
+        step: 1,
       }
     },
-    tooLow: 200
+    tooLow: 100
   }
 };
-// setTimeout(function() { request(options) }, 1000 * 1);
+setTimeout(function() { request(options) }, 1000 * 1);
 
 // decimate step is in window intervals: 4 windows = 1 hour, 1 window = 15m
 
 
 setInterval(searchLoop, 1000 * searchInterval);
-// collapseProduct('love9056');
+collapseProduct('love1005');
