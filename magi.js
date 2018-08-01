@@ -2,6 +2,7 @@ const fs = require('fs');
 var Twitter = require('twitter');
 const logUpdate = require('log-update');
 var jsonfile = require('jsonfile')
+var argv = require('minimist')(process.argv.slice(2));
 var asyncLoop = require('node-async-loop');
 var onlyEmoji = require('emoji-aware').onlyEmoji;
 var emojiTree = require('emoji-tree');
@@ -115,7 +116,7 @@ function request(options) {
 
   // obj.children.push(request({query: topHashtags[x].key, count: obj.count/1.2, depth: obj.config.depth, currentDepth: obj.currentDepth+1, childQueries: obj.config.childQueries, parentFileName:obj.parentFileName, requestParent: obj.query, cutoffs: obj.cutoffs, tooLow: obj.config.tooLow, isChild: true}))
 
-  jsonfile.writeFileSync('./magimagi/requests/query-' + filename + '.json',
+  jsonfile.writeFileSync('./magi/requests/query-' + filename + '.json',
   {
     // configured at the start
 
@@ -145,7 +146,8 @@ function request(options) {
       childQueries: options.config.childQueries,
       excludeRetweets: options.config.excludeRetweets,
       tooLow: options.config.tooLow,
-      depth: options.config.depth
+      depth: options.config.depth,
+      divisor: options.config.divisor
     },
 
 
@@ -157,6 +159,7 @@ function request(options) {
 
     searchInfo: {
       window_count: 1,
+      window_average: 0,
       requestTime: moment(),
       startTime: startTime,
       endTime: undefined,
@@ -180,14 +183,14 @@ function request(options) {
 
 function awake() {
   initializeClients(clients);
-  fs.readdir('./magimagi/requests', function (err, files) {
+  fs.readdir('./magi/requests', function (err, files) {
     if(files.length <= 2) {
       console.log(' o No requests found!')
       return;
     }
 
     for(i=2;i<files.length;i++) {
-      jsonfile.readFile('./magimagi/requests/' + files[i], function(err, obj) {
+      jsonfile.readFile('./magi/requests/' + files[i], function(err, obj) {
         if(err) throw err;
         if(obj.clientNum != -1) {
           occupiedClientNumbers.push(obj.clientNum);
@@ -319,7 +322,7 @@ function makeFrequencyDicts(words, tweetTypes, times, popular, cutoffs) {
 
 function requestComplete(obj) {
 
-  jsonfile.writeFileSync('./magimagi/requests/incomplete_backups/query-' + obj.filename + '.json', obj);
+  jsonfile.writeFileSync('./magi/requests/incomplete_backups/query-' + obj.filename + '.json', obj);
   deoccupyclient(obj.clientNum)
 
   obj.data = makeFrequencyDicts(obj.temp_wordpool, obj.temp_tweetTypes, obj.temp_times, obj.temp_popular_tweets, obj.config.cutoffs)
@@ -330,7 +333,7 @@ function requestComplete(obj) {
     console.log(' X Requesting ' + topHashtags.length + ' more searches.');
     for(x=0;x<topHashtags.length;x++) {
       if(topHashtags[x].key.toLowerCase() != obj.parentFileName.toLowerCase() && topHashtags[x].key.toLowerCase() != obj.query.toLowerCase()) {
-        obj.children.push(request({query: topHashtags[x].key, count: obj.count/2, currentDepth: obj.currentDepth+1, isChild:true, parentFileName:obj.parentFileName, requestParent: obj.query, config:obj.config}))
+        obj.children.push(request({query: topHashtags[x].key, count: obj.count/obj.config.divisor, currentDepth: obj.currentDepth+1, isChild:true, parentFileName:obj.parentFileName, requestParent: obj.query, config:obj.config}))
       }
     }
   } else {
@@ -342,16 +345,16 @@ function requestComplete(obj) {
   obj.searchInfo.endTime = moment();
 
   if(obj.isChild) {
-    let parentObj = jsonfile.readFileSync('./magimagi/products/product-' + obj.parentFileName + '.json');
+    let parentObj = jsonfile.readFileSync('./magi/products/product-' + obj.parentFileName + '.json');
     parentObj.hashtagObjs.push(obj);
-    jsonfile.writeFileSync('./magimagi/products/product-' + parentObj.filename + '.json', parentObj);
+    jsonfile.writeFileSync('./magi/products/product-' + parentObj.filename + '.json', parentObj);
   } else {
-    jsonfile.writeFileSync('./magimagi/products/product-' + obj.filename + '.json', obj);
+    jsonfile.writeFileSync('./magi/products/product-' + obj.filename + '.json', obj);
   }
 
-  if(fs.existsSync('./magimagi/requests/query-' + obj.filename + '.json')) {
+  if(fs.existsSync('./magi/requests/query-' + obj.filename + '.json')) {
     console.log(' - Unlinking ' + obj.filename);
-    fs.unlinkSync('./magimagi/requests/query-' + obj.filename + '.json');
+    fs.unlinkSync('./magi/requests/query-' + obj.filename + '.json');
   } else {
     // console.log(' - Was already unlinked. Ghost request.')
   }
@@ -363,13 +366,13 @@ function requestComplete(obj) {
 // collapse before uploading to view site
 
 function collapseProduct(product) {
-  jsonfile.readFile('./magimagi/products/product-' + product + '.json', function(err, obj) {
+  jsonfile.readFile('./magi/products/product-' + product + '.json', function(err, obj) {
     if (err) throw err;
 
     delete obj.parentFileName;
     delete obj.requestParent;
     delete obj.clientNum;
-    delete obj.config.cutoffs;
+    delete obj.config;
     delete obj.isChild;
     delete obj.uniques;
     delete obj.nextWindow;
@@ -384,7 +387,7 @@ function collapseProduct(product) {
       delete obj.hashtagObjs[key].parentFileName;
       delete obj.hashtagObjs[key].requestParent;
       delete obj.hashtagObjs[key].clientNum;
-      delete obj.hashtagObjs[key].config.cutoffs;
+      delete obj.hashtagObjs[key].config;
       delete obj.hashtagObjs[key].isChild;
       delete obj.hashtagObjs[key].uniques;
       delete obj.hashtagObjs[key].nextWindow;
@@ -401,7 +404,7 @@ function collapseProduct(product) {
 
     trimData(obj.data);
     obj.hashtagObjs = formatHashtagObjs(obj.hashtagObjs);
-    jsonfile.writeFileSync('./magimagi/products/product-' + product + '-formatted.json', obj);
+    jsonfile.writeFileSync('./magi/products/product-' + product + '-formatted.json', obj);
 
 
   });
@@ -458,7 +461,7 @@ function searchLoop() {
   console.log('\n')
   console.log(' ⧗ ' + moment().format("MMM Do, h:mm:ss a"))
   console.log(occupiedClientNumbers);
-  fs.readdir('./magimagi/requests', function (err, files) {
+  fs.readdir('./magi/requests', function (err, files) {
     console.log(' + Entered /requests')
     if(files.length <= 1) {
       console.log(' o No requests found!')
@@ -467,7 +470,7 @@ function searchLoop() {
 
     for(i=2;i<files.length;i++) {
       // console.log(i + ' / ' + files.length);
-      jsonfile.readFile('./magimagi/requests/' + files[i], function(err, obj) {
+      jsonfile.readFile('./magi/requests/' + files[i], function(err, obj) {
         if(obj == undefined) {
           console.log(' e Invalid file.');
           return;
@@ -521,9 +524,9 @@ function searchLoop() {
           if(tweets.statuses.length == 0) {
               console.log('No tweets found for ' + obj.query + '. What? Unlinking.');
               deoccupyclient(obj.clientNum);
-              if(fs.existsSync('./magimagi/requests/query-' + obj.filename + '.json')) {
+              if(fs.existsSync('./magi/requests/query-' + obj.filename + '.json')) {
                 console.log(' - Unlinking ' + obj.filename);
-                fs.unlinkSync('./magimagi/requests/query-' + obj.filename + '.json');
+                fs.unlinkSync('./magi/requests/query-' + obj.filename + '.json');
               }
               return;
           }
@@ -596,7 +599,7 @@ function searchLoop() {
 
           if(obj.collectedTweets >= obj.count || obj.low_frequency) {
             // this request is complete.
-            obj.temp_times.push({y:obj.tweets_this_window, x: moment()});
+            obj.temp_times.push({y:obj.tweets_this_window, x: moment().format('X')});
 
             if(obj.low_frequency) {
               console.log(' ! ' + obj.query + ' has a low frequency.')
@@ -605,7 +608,7 @@ function searchLoop() {
             return;
           }
 
-          jsonfile.writeFileSync('./magimagi/requests/query-' + obj.filename + '.json', obj);
+          jsonfile.writeFileSync('./magi/requests/query-' + obj.filename + '.json', obj);
 
         });
 
@@ -625,39 +628,66 @@ function searchLoop() {
 // emojis: 7%
 // hashtags: 10%
 
-awake();
 // obj.children.push(request({query: topHashtags[x].key, count: obj.count/1.2, depth: obj.config.depth, currentDepth: obj.currentDepth+1, childQueries: obj.config.childQueries, parentFileName:obj.parentFileName, requestParent: obj.query, cutoffs: obj.cutoffs, tooLow: obj.config.tooLow, isChild: true}))
 
-var options = {
-  query: 'love',
-  count: 200,
-  config: {
-    depth: 2,
-    childQueries:0,
-    cutoffs:{
-      words:{
-        type:'percentage',
-        value:50
-      },
-      emojis:{
-        type:'percentage',
-        value:10
-      },
-      hashtags:{
-        type:'percentage',
-        value:30
-      },
-      decimate:{
-        step: 1,
-      }
-    },
-    tooLow: 100
-  }
-};
-setTimeout(function() { request(options) }, 1000 * 1);
+
+
+// var options = {
+//   query: 'love',
+//   count: 200,
+//   config: {
+//     depth: 2,
+//     childQueries:0,
+//     cutoffs:{
+//       words:{
+//         type:'percentage',
+//         value:50
+//       },
+//       emojis:{
+//         type:'percentage',
+//         value:10
+//       },
+//       hashtags:{
+//         type:'percentage',
+//         value:30
+//       },
+//       decimate:{
+//         step: 1,
+//       }
+//     },
+//     tooLow: 100,
+//     divisor: 2
+//   }
+// };
+// setTimeout(function() { request(options) }, 1000 * 1);
 
 // decimate step is in window intervals: 4 windows = 1 hour, 1 window = 15m
 
 
-setInterval(searchLoop, 1000 * searchInterval);
-collapseProduct('love1005');
+// setInterval(searchLoop, 1000 * searchInterval);
+// collapseProduct('love1005');
+
+if(argv.s) {
+  awake();
+  setInterval(searchLoop, 1000 * searchInterval);
+}
+
+if(argv.hasOwnProperty('r')) {
+  if(argv.r == true) {
+    console.log('Asked to Request, but no path given.');
+  } else {
+    console.log(argv.r);
+    jsonfile.readFile(argv.r, function(err, obj) {
+      setTimeout(function() { request(obj) }, 1000 * 1);
+    });
+  }
+}
+
+if(argv.hasOwnProperty('c')) {
+  if(argv.c == true) {
+    console.log('Asked to Collapse, but no product name given.');
+  } else {
+    console.log(argv.c);
+    collapseProduct(argv.c);
+  }
+}
