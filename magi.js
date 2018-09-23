@@ -1,25 +1,31 @@
 const fs = require('fs');
 var Twitter = require('twitter');
 const logUpdate = require('log-update');
+var mysql = require('mysql');
 var jsonfile = require('jsonfile')
 var argv = require('minimist')(process.argv.slice(2));
 var asyncLoop = require('node-async-loop');
-var onlyEmoji = require('emoji-aware').onlyEmoji;
 var emojiTree = require('emoji-tree');
 var moment = require('moment');
+const ipc = require('node-ipc');
+
 moment().format();
+
+let dataToDisplay = {message: 'hello! Just started =)'};
+
+
+
 const searchInterval = 8;
-let i = 0;
 
 let frames = ["•••", "•••", "o••", "•o•", "••o", "•••", "o••", "oo•", "ooo", "ooo", "ooo", "•oo", "••o"];
 
 const helperFunctions = require('./helperFunctions.js');
 
 const commons = fs.readFileSync('./magellan/commons.txt', 'utf8').split(',');
-let occupiedClientNumbers = [];
-let clients = [];
-let fileNames = []
 
+let sqlConnections = [], occupiedClientNumbers = [], clients = [], fileNames = []
+
+// consider storing filenames in json
 // eventually move most short functions to helperFunctions.js
 
 function getRateLimit(client) {
@@ -47,8 +53,19 @@ function initializeClients(clientsArray) {
         clientsArray.push(client);
       })
     }
-
   });
+
+  fs.readdir('./SQLinfo', function(err, files) {
+    console.log(' + Entered ./SQLinfo');
+    for(s=1;s<files.length;s++) {
+      console.log(' | Reading / ' + files[s]);
+      jsonfile.readFile('./SQLinfo/' + files[s], function(err, obj) {
+        var con = mysql.createConnection(obj);
+        sqlConnections.push(con);
+      })
+    }
+  })
+
 }
 
 function deoccupyclient(client) {
@@ -93,6 +110,7 @@ function findObj(objects, key, value) {
 }
 
 function request(options) {
+
   var filename;
   if(options.hasOwnProperty('isChild') && options.isChild == true) {
     filename = generateFileName(options.query, options.requestParent, options.parentFileName);
@@ -183,6 +201,7 @@ function request(options) {
 
 function awake() {
   initializeClients(clients);
+
   fs.readdir('./magi/requests', function (err, files) {
     if(files.length <= 2) {
       console.log(' o No requests found!')
@@ -260,51 +279,56 @@ function highestFrequencyinData(data) {
   return p[0];
 }
 
+let frameCount = 0;
+
+function frameUpdate(msg) {
+  frameCount += 0.001;
+  const frame = frames[Math.floor(frameCount) % frames.length];
+  logUpdate(` ${frame} ${msg}`)
+  dataToDisplay.message = `${frame} ${msg}`;
+}
+
+function removeFrom(list, items) {
+  for(q=0;q<items.length;q++) {
+    list.splice(list.indexOf(items[q]), 1);
+  }
+  items = [];
+}
+
 function makeFrequencyDicts(words, tweetTypes, times, popular, cutoffs) {
+    const emojiRegex = /(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\u3299|\u3297|\u303d|\u3030|\u24c2|\ud83c[\udd70-\udd71]|\ud83c[\udd7e-\udd7f]|\ud83c\udd8e|\ud83c[\udd91-\udd9a]|\ud83c[\udde6-\uddff]|[\ud83c[\ude01-\ude02]|\ud83c\ude1a|\ud83c\ude2f|[\ud83c[\ude32-\ude3a]|[\ud83c[\ude50-\ude51]|\u203c|\u2049|[\u25aa-\u25ab]|\u25b6|\u25c0|[\u25fb-\u25fe]|\u00a9|\u00ae|\u2122|\u2139|\ud83c\udc04|[\u2600-\u26FF]|\u2b05|\u2b06|\u2b07|\u2b1b|\u2b1c|\u2b50|\u2b55|\u231a|\u231b|\u2328|\u23cf|[\u23e9-\u23f3]|[\u23f8-\u23fa]|\ud83c\udccf|\u2934|\u2935|[\u2190-\u21ff])/g
 
+    let toRemove = [];
     var startTime = moment();
-    console.log('\n\n + Please wait a moment... \n | This process takes a bit of time.')
 
+    console.log('\n\n + Please wait a moment... \n | This process takes a bit of time.');
     logUpdate(' : Collecting Hashtags...')
 
     let hashtags = words.filter(function(obj) {
-      i += 0.001;
-      const frame = frames[Math.floor(i) % frames.length];
-      logUpdate(` ${frame} Collecting Hashtags...`)
+      frameUpdate('Collecting Hashtags');
       if(obj[0] == '#') {
-        logUpdate(` ${frame} Collecting Hashtags..`)
+        toRemove.push(obj);
         return true;
       }
     });
+
+    removeFrom(words, toRemove);
     logUpdate(' √ Collecting Hashtags')
-    console.log(' : Stripping Emojis...')
+    console.log(' : Collecting Emojis...')
 
     let emojis = [].concat.apply([], words.filter(function(string){
-      i += 0.001;
-      const frame = frames[Math.floor(i) % frames.length];
-      logUpdate(` ${frame} Stripping Emojis...`)
-      if(onlyEmoji(string).length >= 1) {
-        logUpdate(` ${frame} Stripping Emojis..`)
+      frameUpdate('Collecting Emojis');
+      if(string.match(emojiRegex)) {
+        toRemove.push(string);
         return true;
       }
     }).map(string => getEmojisFromString(string)));
 
-    logUpdate(' √ Stripping Emojis')
-    console.log(' : Stripping Words...')
+    removeFrom(words, toRemove);
 
-    words = words.filter( function(string) {
-      i += 0.001;
-      const frame = frames[Math.floor(i) % frames.length];
-      logUpdate(
-        ` ${frame} Stripping Words...`
-      );
-      if(string[0] != '#' && onlyEmoji(string).length == 0) {
-        logUpdate(` ${frame} Stripping Words..`)
-        return true;
-      }
-    });
 
-    logUpdate(' √ Collecting Words')
+    logUpdate(' √ Collecting Emojis')
+
     console.log(' | Done processing raw data.')
     console.log(' | Took ' + moment().from(startTime, true));
     console.log(' @ Making Dictionaries...')
@@ -321,7 +345,7 @@ function makeFrequencyDicts(words, tweetTypes, times, popular, cutoffs) {
 
 
 function requestComplete(obj) {
-
+  dataToDisplay.message = `Formatting. This takes a moment... ${moment().format('MMM/DD hh:mm a')}`;
   jsonfile.writeFileSync('./magi/requests/incomplete_backups/query-' + obj.filename + '.json', obj);
   deoccupyclient(obj.clientNum)
 
@@ -332,6 +356,9 @@ function requestComplete(obj) {
   if(obj.currentDepth != obj.config.depth) {
     console.log(' X Requesting ' + topHashtags.length + ' more searches.');
     for(x=0;x<topHashtags.length;x++) {
+      console.log(topHashtags[x].key.toLowerCase())
+      console.log(obj.query.toLowerCase());
+
       if(topHashtags[x].key.toLowerCase() != obj.parentFileName.toLowerCase() && topHashtags[x].key.toLowerCase() != obj.query.toLowerCase()) {
         obj.children.push(request({query: topHashtags[x].key, count: obj.count/obj.config.divisor, currentDepth: obj.currentDepth+1, isChild:true, parentFileName:obj.parentFileName, requestParent: obj.query, config:obj.config}))
       }
@@ -358,6 +385,7 @@ function requestComplete(obj) {
   } else {
     // console.log(' - Was already unlinked. Ghost request.')
   }
+  dataToDisplay.message = `Done formatting. ${moment().format('MMM/DD hh:mm a')}`;
 
 };
 
@@ -457,14 +485,24 @@ function formatHashtagObjs(objArray) {
   return objArray.filter(obj => obj.currentDepth == 1);
 }
 
+
+
 function searchLoop() {
+  for(i=0;i<clients.length;i++) {
+	delete dataToDisplay[i];
+  }
+  console.log(dataToDisplay); 
+  dataToDisplay.status = 'searching';
   console.log('\n')
   console.log(' ⧗ ' + moment().format("MMM Do, h:mm:ss a"))
   console.log(occupiedClientNumbers);
   fs.readdir('./magi/requests', function (err, files) {
     console.log(' + Entered /requests')
-    if(files.length <= 1) {
+    dataToDisplay.message = `Requests in limbo: ${files.length-2 - occupiedClientNumbers.length}  ${moment().format('MMM/DD hh:mm a')}`;
+
+    if(files.length <= 2) {
       console.log(' o No requests found!')
+      dataToDisplay.message = `No requests at the moment. ${moment().format('MMM/DD hh:mm a')}`;
       return;
     }
 
@@ -531,6 +569,7 @@ function searchLoop() {
               return;
           }
 
+          let savedExample;
           asyncLoop(tweets.statuses, function(item, next) {
 
             if(obj.uniques.includes(item.user.id_str)) {
@@ -547,6 +586,10 @@ function searchLoop() {
                 }
               } else {
                 obj.temp_tweetTypes.push('OC');
+              }
+
+              if(Math.floor(Math.random() * 4)+1 == 3) {
+              	savedExample = item.text;
               }
 
               obj.temp_usableTweets += 1
@@ -582,11 +625,20 @@ function searchLoop() {
 
 
           var estimatedCompletion = ((((obj.count - obj.collectedTweets) / obj.searchInfo.window_average) + obj.searchInfo.window_count) * 15);
-
           if(moment().isAfter(moment(estimatedCompletion))) {
             estimatedCompletion = ((((obj.count - obj.collectedTweets) / obj.searchInfo.window_average) + obj.searchInfo.window_count+2) * 15);
           }
 
+          dataToDisplay[obj.clientNum] = {
+            'query': obj.query, 
+            'currentDepth': obj.currentDepth + ' / ' + obj.config.depth,
+            'collectedTweets': obj.collectedTweets + ' / ' + Math.floor(obj.count),
+            'frequency': Math.ceil(obj.searchInfo.window_average) + '(' + obj.searchInfo.window_count +') > ' + obj.config.tooLow,
+            'windowReset': reset,
+            'elapsed': moment(obj.searchInfo.startTime).toNow(true),
+            'etc': moment(moment(obj.searchInfo.startTime).add(estimatedCompletion, 'minutes')).fromNow(),
+            'example': savedExample
+        }
           console.log('\n + ∞ ' + obj.query + ' @ ' + obj.currentDepth + ' / ' + obj.config.depth + ' / (' + obj.filename + ')');
           console.log(' |   ' + obj.collectedTweets + ' / ' + Math.floor(obj.count));
           console.log(' | Σ ' + Math.ceil(obj.searchInfo.window_average) + '(' + obj.searchInfo.window_count +') > ' + obj.config.tooLow);
@@ -618,8 +670,47 @@ function searchLoop() {
 }
 
 
+function sqlUpdate(connection) {
+  var sql = `SELECT * FROM tweetlinks.sql_limbo_requests LIMIT 0,1`;
+  connection.query(sql, function (err, row) {
+    if (err) throw err;
+    // console.log(row)
+    if(row.length != 0) {
+    	var remote = row[0];
+    	console.log(' O Remote Request!');
+      dataToDisplay.message = `Got a remote request! ${moment().format('MMM/DD hh:mm a')}`;
+    	console.log(remote);
+    	request(
+    	{
+		query: remote.query, 
+		count: remote.count, 
+		config: { 
+			cutoffs: {
+				words: {type: 'percentage', value: 50},
+				emojis: {type: 'percentage', value: 10},
+				hashtags: {type: 'percentage', value: 30},
+				decimate: {step: 1}
+			}, 
+			childQueries: remote.childQueries,
+			tooLow: 2,
+			depth: remote.depth,
+			divisor: 2
+		}
+		})
+		sql = `DELETE FROM tweetlinks.sql_limbo_requests LIMIT 1`;
+		 connection.query(sql, function (err, row) {
+		 	if (err) throw err;
+		 	console.log('RM')
+		 })
+   	}
+  });
+}
 
-
+function sqlLoop() {
+	if(sqlConnections[0] != undefined) {
+		sqlUpdate(sqlConnections[0])
+	}
+}
 
 // setTimeout(function() { getRateLimit(0) }, 1000 * 1);
 
@@ -667,27 +758,93 @@ function searchLoop() {
 // setInterval(searchLoop, 1000 * searchInterval);
 // collapseProduct('love1005');
 
-if(argv.s) {
-  awake();
-  setInterval(searchLoop, 1000 * searchInterval);
+
+exports.pass = function(electronPass) {
+	console.log(' + Passed thru ELECTRON...')
+	check(electronPass);
+  ipc.config.id = 'MAGI';
+  ipc.config.retry = 1500;
+  ipc.config.silent = true;
+
+  ipc.serve(function() {
+    console.log(' q SERVE');
+    ipcserver = ipc.server;    
+
+    ipc.server.on('message', function(data, socket){
+      console.log(' q MAGI: got a poke from window, sending data back.');
+      ipc.server.emit(socket, 'message', dataToDisplay);
+    })
+
+    ipc.server.on('socket.disconnected', function(socket, destroyedSocketID){
+      console.log(' q MAGI: ' + destroyedSocketID + ' disconnected. This is a bad thing!');
+    })
+  })
+
+  ipc.server.start();
+
 }
 
-if(argv.hasOwnProperty('r')) {
-  if(argv.r == true) {
-    console.log('Asked to Request, but no path given.');
-  } else {
-    console.log(argv.r);
-    jsonfile.readFile(argv.r, function(err, obj) {
-      setTimeout(function() { request(obj) }, 1000 * 1);
-    });
+var searchLoopRef = null;
+var SQLloopRef = null;
+
+function check(argv) {
+  if(argv.a) { 
+    if(searchLoopRef != null) {
+      console.log(' X Stopping')
+      clearInterval(searchLoopRef);
+      if(SQLloopRef != null) {
+      	clearInterval(SQLloopRef);
+      };
+      process.exit()
+    }
   }
+
+	if(argv.s) {
+	  awake();
+	  searchLoopRef = setInterval(searchLoop, 1000 * searchInterval);
+	  if(argv.d) {
+      // make this longer later on
+	  	SQLloopRef = setInterval(sqlLoop, 1000);
+	  }
+	}
+
+	if(argv.hasOwnProperty('r')) {
+	  if(argv.r == true) {
+	    console.log('Asked to Request, but no path given.');
+	  } else {
+	    console.log(argv.r);
+	    jsonfile.readFile(argv.r, function(err, obj) {
+	      setTimeout(function() { request(obj) }, 1000 * 1);
+	    });
+	  }
+	}
+
+	if(argv.hasOwnProperty('c')) {
+	  if(argv.c == true) {
+	    console.log('Asked to Collapse, but no product name given.');
+	  } else {
+	    console.log(argv.c);
+	    collapseProduct(argv.c);
+	  }
+	}
+
+	if(argv.hasOwnProperty('l')) {
+	  if(argv.l == true) {
+	    console.log('Asked to Low Frequency, but no path given.');
+	  } else {
+	    console.log(argv.l);
+	    jsonfile.readFile('magi/requests/'+argv.l, function(err, obj) {
+	      if(err) {
+	        console.log('Invalid Path');
+	        return;
+	      }
+	      obj.low_frequency = true;
+	      jsonfile.writeFile('magi/requests/'+argv.l, obj, function(err) {
+	        console.log("Low Frequency'd")
+	      });
+	    });
+	  }
+	}
 }
 
-if(argv.hasOwnProperty('c')) {
-  if(argv.c == true) {
-    console.log('Asked to Collapse, but no product name given.');
-  } else {
-    console.log(argv.c);
-    collapseProduct(argv.c);
-  }
-}
+check(argv);

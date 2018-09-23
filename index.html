@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="UTF-8">
+      <img class = "frogEye" src = "./stylesheets/frogeye.gif">
+      <h1 class = 'gum'>gummyfrog</h1>
+      <h2 class = 'gumtext'>frogeye  :  fabled crystal ball of the ultimate socialite</h2>
+      <link rel="stylesheet" href="./stylesheets/main.css">
+      <link rel="stylesheet" href="./stylesheets/frogeye.css">
+    </head>
+
+    <body>
+      <div class="break"></div>
+      <h2 class ='gumtext' style = "color: black; text-transform: lowercase;" id = "log"> messages... </h2>
+      <h3 id="jstree"> Waiting for response...</h3>
+      <h3 class = 'gumtext' style = "color: black; font-size: 18px">node <script>document.write(process.versions.node)</script>.
+      chrome <script>document.write(process.versions.chrome)</script>.
+      electron <script>document.write(process.versions.electron)</script>.</h2>
+      
+      <div class="scrollbar" id="style-1">
+        <div class="force-overflow"></div>
+      </div> 
+
+    </body>
+
+  
+    <script>
+      let log = document.getElementById('log');
+      const frogeye = require('./frogeyeDisplayer.js');
+      const ipc = require('node-ipc');
+      ipc.config.id = 'window';
+      ipc.config.retry = 1500;
+
+      ipc.connectTo('MAGI', function() {
+        ipc.of.MAGI.on('connect', function(){
+          setInterval(function() {
+            ipc.of.MAGI.emit('message', 'This is Window, requesting!');
+          }, 1000)
+          console.log('window: connected to MAGI');
+          ipc.of.MAGI.emit('message', 'This is Window, Connected to Magi.');
+        })
+        ipc.of.MAGI.on('disconnect', function() {
+          console.log('window: disconnected from MAGI');
+        })
+        ipc.of.MAGI.on('message', function(data) {
+          console.log('window: got a message from MAGI')
+          log.innerHTML = data.message;
+          frogeye.jsonDisplay(document.getElementById('jstree'), data);
+          // frogeye.makeButtons(document);
+        })
+      })
+    </script>
+
+  </html>
