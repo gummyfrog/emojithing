@@ -1,4 +1,3 @@
-const emojiTree = require('emoji-tree');
 const fs = require('fs');
 var Twitter = require('twitter');
 var jsonfile = require('jsonfile')

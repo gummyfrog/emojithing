@@ -8,7 +8,8 @@ var asyncLoop = require('node-async-loop');
 var emojiTree = require('emoji-tree');
 var moment = require('moment');
 const ipc = require('node-ipc');
-
+const Sentiment = require('sentiment')
+var sentiment = new Sentiment();
 moment().format();
 
 let dataToDisplay = {message: 'hello! Just started =)'};
@@ -45,6 +46,8 @@ function getEmojisFromString(string) {
 
 function initializeClients(clientsArray) {
   fs.readdir('./clients', function (err, files) {
+  	if(files == undefined) { console.error('ERR: No directory for Twitter clients found. Should be named "clients".'); process.exit(); } 
+
     console.log(' + Entered ./clients')
     for(i=1; i<files.length-1; i++) {
       console.log(' | Reading / ' + files[i]);
@@ -55,16 +58,19 @@ function initializeClients(clientsArray) {
     }
   });
 
-  fs.readdir('./SQLinfo', function(err, files) {
-    console.log(' + Entered ./SQLinfo');
-    for(s=1;s<files.length;s++) {
-      console.log(' | Reading / ' + files[s]);
-      jsonfile.readFile('./SQLinfo/' + files[s], function(err, obj) {
-        var con = mysql.createConnection(obj);
-        sqlConnections.push(con);
-      })
-    }
-  })
+  if(argv.d) {
+	  fs.readdir('./SQLinfo', function(err, files) {
+	  	if(files == undefined) { console.error('ERR: No directory for SQL clients found. Should be named "SQLinfo".'); process.exit(); } 
+	    console.log(' + Entered ./SQLinfo');
+	    for(s=1;s<files.length;s++) {
+	      console.log(' | Reading / ' + files[s]);
+	      jsonfile.readFile('./SQLinfo/' + files[s], function(err, obj) {
+	        var con = mysql.createConnection(obj);
+	        sqlConnections.push(con);
+	      })
+	    }
+	  })
+	}
 
 }
 
@@ -158,6 +164,11 @@ function request(options) {
     temp_wordpool: [],
     temp_usableTweets: 0,
     temp_times: [],
+    temp_sentiments: [],
+
+    positiveTweets: [],
+    negativeTweets: [],
+    neutralTweets: [],
 
     config: {
       cutoffs: options.config.cutoffs,
@@ -350,6 +361,11 @@ function requestComplete(obj) {
   deoccupyclient(obj.clientNum)
 
   obj.data = makeFrequencyDicts(obj.temp_wordpool, obj.temp_tweetTypes, obj.temp_times, obj.temp_popular_tweets, obj.config.cutoffs)
+
+  obj.positiveTweets = obj.temp_sentiments.filter(num => Math.sign(num) == 1).length;
+  obj.negativeTweets = obj.temp_sentiments.filter(num => Math.sign(num) == -1).length;
+  obj.neutralTweets = obj.temp_sentiments.filter(num => Math.sign(num) == 0).length;
+
   obj.temp_wordpool = [];
   var topHashtags = wordsFor(obj.data.hashtags, obj.config.childQueries);
 
@@ -410,6 +426,7 @@ function collapseProduct(product) {
     delete obj.temp_tweetTypes;
     delete obj.temp_times;
     delete obj.temp_popular_tweets;
+    delete obj.temp_sentiments
 
     for(var key in obj.hashtagObjs) {
       delete obj.hashtagObjs[key].parentFileName;
@@ -425,10 +442,8 @@ function collapseProduct(product) {
       delete obj.hashtagObjs[key].temp_tweetTypes;
       delete obj.hashtagObjs[key].temp_times;
       delete obj.hashtagObjs[key].temp_popular_tweets;
-
-
+      delete obj.hashtagObjs[key].temp_sentiments;
     }
-
 
     trimData(obj.data);
     obj.hashtagObjs = formatHashtagObjs(obj.hashtagObjs);
@@ -596,6 +611,8 @@ function searchLoop() {
               obj.tweets_this_window += 1;
               obj.collectedTweets += 1;
               obj.uniques.push(item.user.id_str);
+              obj.temp_sentiments.push(sentiment.analyze(item.text).score)
+
               helperFunctions.sterilizeTweet(item.text, obj.temp_wordpool, commons);
             }
 
@@ -760,7 +777,7 @@ function sqlLoop() {
 
 
 exports.pass = function(electronPass) {
-	console.log(' + Passed thru ELECTRON...')
+	// console.log(' + Passed thru ELECTRON...')
 	check(electronPass);
   ipc.config.id = 'MAGI';
   ipc.config.retry = 1500;
@@ -771,12 +788,12 @@ exports.pass = function(electronPass) {
     ipcserver = ipc.server;    
 
     ipc.server.on('message', function(data, socket){
-      console.log(' q MAGI: got a poke from window, sending data back.');
+      // console.log(' q MAGI: got a poke from window, sending data back.');
       ipc.server.emit(socket, 'message', dataToDisplay);
     })
 
     ipc.server.on('socket.disconnected', function(socket, destroyedSocketID){
-      console.log(' q MAGI: ' + destroyedSocketID + ' disconnected. This is a bad thing!');
+      // console.log(' q MAGI: ' + destroyedSocketID + ' disconnected. This is a bad thing!');
     })
   })
 
@@ -788,22 +805,21 @@ var searchLoopRef = null;
 var SQLloopRef = null;
 
 function check(argv) {
-  if(argv.a) { 
-    if(searchLoopRef != null) {
-      console.log(' X Stopping')
-      clearInterval(searchLoopRef);
-      if(SQLloopRef != null) {
-      	clearInterval(SQLloopRef);
-      };
-      process.exit()
-    }
-  }
+	if(argv.a) { 
+	    if(searchLoopRef != null) {
+	      console.log(' X Stopping')
+	      clearInterval(searchLoopRef);
+	      if(SQLloopRef != null) {
+	    	clearInterval(SQLloopRef);
+	    };
+	    process.exit()
+	  }
+	}
 
 	if(argv.s) {
 	  awake();
 	  searchLoopRef = setInterval(searchLoop, 1000 * searchInterval);
 	  if(argv.d) {
-      // make this longer later on
 	  	SQLloopRef = setInterval(sqlLoop, 1000);
 	  }
 	}

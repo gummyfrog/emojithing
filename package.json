@@ -1,17 +1,16 @@
 {
-  "name" : "frogeye",
-  "version" : "1.0.0",
-  "description" : "Crystal ball for the Ultimate Socialite.",
-  "main" : "main.js",
-  "scripts" : {
-    "test" : "echo \"Error: no test specified\" && exit 1",
-    "start" : "electron ."
+  "name": "frogeye",
+  "version": "1.0.1",
+  "description": "Crystal ball for the Ultimate Socialite.",
+  "main": "main.js",
+  "scripts": {
+    "vis": "electron ."
   },
-  "repository" : {
-    "type" : "git",
-    "url" : "git+https://github.com/gummyfrog/emojithing.git"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gummyfrog/emojithing.git"
   },
-  "keywords" : [
+  "keywords": [
     "Emoji",
     "Emojis",
     "Twitter",
@@ -20,18 +19,26 @@
     "Collection",
     "Tweets"
   ],
-  "author" : "gummyfrog",
-  "license" : "ISC",
-  "bugs" : {
-    "url" : "https://github.com/gummyfrog/emojithing/issues"
+  "author": "gummyfrog",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gummyfrog/emojithing/issues"
   },
-  "homepage" : "https://github.com/gummyfrog/emojithing#readme",
-  "devDependencies" : {
-    "electron" : "^2.0.7"
+  "homepage": "https://github.com/gummyfrog/emojithing#readme",
+  "devDependencies": {
+    "electron": "^2.0.10"
   },
-  "dependencies" : {
-    "electron-common-ipc" : "^4.3.0",
-    "ipc" : "0.0.1",
-    "node-ipc" : "^9.1.1"
+  "dependencies": {
+    "emoji-strip": ">=0.0.1",
+    "emoji-tree": ">=0.0.1",
+    "jsonfile": ">=0.0.1",
+    "log-update": ">=0.0.1",
+    "minimist": ">=0.0.1",
+    "moment": ">=0.0.1",
+    "mysql": ">=0.0.1",
+    "node-async-loop": ">=0.0.1",
+    "node-ipc": ">=0.0.1",
+    "sentiment": "^5.0.1",
+    "twitter": ">=0.0.1"
   }
 }
