@@ -142,6 +142,9 @@ function request(options) {
 
   jsonfile.writeFileSync('./magi/requests/query-' + filename + '.json',
   {
+
+
+
     // configured at the start
 
     // these are outside of config because they are changed at each child.
@@ -158,17 +161,16 @@ function request(options) {
     parentFileName: options.parentFileName,
     requestParent: options.requestParent,
 
-    temp_popular_tweets: [],
     uniques: [],
-    temp_tweetTypes: [],
-    temp_wordpool: [],
-    temp_usableTweets: 0,
-    temp_times: [],
-    temp_sentiments: [],
 
-    positiveTweets: [],
-    negativeTweets: [],
-    neutralTweets: [],
+    temp: {
+      tweetTypes: [],
+      wordpool: [],
+      usableTweets: 0,
+      times: [],
+      popular_tweets: [],
+      sentiments: []
+    },
 
     config: {
       cutoffs: options.config.cutoffs,
@@ -226,6 +228,17 @@ function awake() {
           occupiedClientNumbers.push(obj.clientNum);
         }
       });
+    }
+  });
+
+  fs.readdir('./magi/products', function (err, files) {
+    if(files.length <= 1) {
+      return;
+    }
+
+    console.log(' o Products:')
+    for(i=1;i<files.length;i++) {
+      console.log(' | ' + files[i])
     }
   });
 }
@@ -306,7 +319,7 @@ function removeFrom(list, items) {
   items = [];
 }
 
-function makeFrequencyDicts(words, tweetTypes, times, popular, cutoffs) {
+function makeData(words, tweetTypes, times, popular, cutoffs, sentiments) {
     const emojiRegex = /(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\u3299|\u3297|\u303d|\u3030|\u24c2|\ud83c[\udd70-\udd71]|\ud83c[\udd7e-\udd7f]|\ud83c\udd8e|\ud83c[\udd91-\udd9a]|\ud83c[\udde6-\uddff]|[\ud83c[\ude01-\ude02]|\ud83c\ude1a|\ud83c\ude2f|[\ud83c[\ude32-\ude3a]|[\ud83c[\ude50-\ude51]|\u203c|\u2049|[\u25aa-\u25ab]|\u25b6|\u25c0|[\u25fb-\u25fe]|\u00a9|\u00ae|\u2122|\u2139|\ud83c\udc04|[\u2600-\u26FF]|\u2b05|\u2b06|\u2b07|\u2b1b|\u2b1c|\u2b50|\u2b55|\u231a|\u231b|\u2328|\u23cf|[\u23e9-\u23f3]|[\u23f8-\u23fa]|\ud83c\udccf|\u2934|\u2935|[\u2190-\u21ff])/g
 
     let toRemove = [];
@@ -340,11 +353,27 @@ function makeFrequencyDicts(words, tweetTypes, times, popular, cutoffs) {
 
     logUpdate(' √ Collecting Emojis')
 
+    var total = sentiments.length;
+
+    var positiveTweets = sentiments.filter(num => Math.sign(num) == 1);
+    removeFrom(sentiments, positiveTweets);
+
+    var negativeTweets = sentiments.filter(num => Math.sign(num) == -1);
+    removeFrom(sentiments, negativeTweets);
+
+    var neutralTweets = sentiments;
+
+
     console.log(' | Done processing raw data.')
     console.log(' | Took ' + moment().from(startTime, true));
     console.log(' @ Making Dictionaries...')
 
+
+
     return({
+      positiveTweets: Math.round((positiveTweets.length/total) * 100),
+      negativeTweets: Math.round((negativeTweets.length/total) * 100),
+      neutralTweets: Math.round((neutralTweets.length/total) * 100),
       popular: popular,
       hashtags:makeFrequencyDict(hashtags, cutoffs.hashtags),
       emojis:makeFrequencyDict(emojis, cutoffs.emojis),
@@ -360,13 +389,14 @@ function requestComplete(obj) {
   jsonfile.writeFileSync('./magi/requests/incomplete_backups/query-' + obj.filename + '.json', obj);
   deoccupyclient(obj.clientNum)
 
-  obj.data = makeFrequencyDicts(obj.temp_wordpool, obj.temp_tweetTypes, obj.temp_times, obj.temp_popular_tweets, obj.config.cutoffs)
+  obj.data = makeData(obj.temp.wordpool, obj.temp.tweetTypes, obj.temp.times, obj.temp.popular_tweets, obj.config.cutoffs, obj.temp.sentiments)
 
-  obj.positiveTweets = obj.temp_sentiments.filter(num => Math.sign(num) == 1).length;
-  obj.negativeTweets = obj.temp_sentiments.filter(num => Math.sign(num) == -1).length;
-  obj.neutralTweets = obj.temp_sentiments.filter(num => Math.sign(num) == 0).length;
+  console.log(obj.data);
+  if(obj.data.times.length <= 1) {
+    delete obj.data.times;
+  }
 
-  obj.temp_wordpool = [];
+  obj.temp.wordpool = [];
   var topHashtags = wordsFor(obj.data.hashtags, obj.config.childQueries);
 
   if(obj.currentDepth != obj.config.depth) {
@@ -410,8 +440,9 @@ function requestComplete(obj) {
 // collapse before uploading to view site
 
 function collapseProduct(product) {
-  jsonfile.readFile('./magi/products/product-' + product + '.json', function(err, obj) {
+  jsonfile.readFile('./magi/products/'+ product, function(err, obj) {
     if (err) throw err;
+
 
     delete obj.parentFileName;
     delete obj.requestParent;
@@ -421,12 +452,11 @@ function collapseProduct(product) {
     delete obj.uniques;
     delete obj.nextWindow;
     delete obj.tweets_this_window;
-    delete obj.temp_wordpool;
-    delete obj.temp_usableTweets;
-    delete obj.temp_tweetTypes;
-    delete obj.temp_times;
-    delete obj.temp_popular_tweets;
-    delete obj.temp_sentiments
+    delete obj.temp;
+    delete obj.count;
+    delete obj.low_frequency;
+    delete obj.collectedTweets;
+
 
     for(var key in obj.hashtagObjs) {
       delete obj.hashtagObjs[key].parentFileName;
@@ -437,12 +467,12 @@ function collapseProduct(product) {
       delete obj.hashtagObjs[key].uniques;
       delete obj.hashtagObjs[key].nextWindow;
       delete obj.hashtagObjs[key].tweets_this_window;
-      delete obj.hashtagObjs[key].temp_wordpool;
-      delete obj.hashtagObjs[key].temp_usableTweets;
-      delete obj.hashtagObjs[key].temp_tweetTypes;
-      delete obj.hashtagObjs[key].temp_times;
-      delete obj.hashtagObjs[key].temp_popular_tweets;
-      delete obj.hashtagObjs[key].temp_sentiments;
+      delete obj.hashtagObjs[key].temp;
+      delete obj.hashtagObjs[key].count;
+      delete obj.hashtagObjs[key].low_frequency;
+      delete obj.hashtagObjs[key].collectedTweets;
+
+
     }
 
     trimData(obj.data);
@@ -457,6 +487,9 @@ function collapseProduct(product) {
 
 function trimData(data) {
   for(var key in data) {
+    if(['number'].includes(typeof(data[key]))) {
+      continue;
+    }
 
     var returnObj = {};
     var slicedData = Object.keys(data[key]).map(dataKey => {return {key:dataKey,value:data[key][dataKey]}}).sort(function(a, b) {return b.value-a.value})
@@ -592,28 +625,28 @@ function searchLoop() {
             } else {
 
               if(item.retweeted_status != null) {
-                obj.temp_tweetTypes.push('RT');
-                if(item.retweet_count > 100 && !obj.temp_popular_tweets.includes(item.retweeted_status.id_str) ) {
+                obj.temp.tweetTypes.push('RT');
+                if(item.retweet_count > 100 && !obj.temp.popular_tweets.includes(item.retweeted_status.id_str) ) {
                   // storing popular tweet ids, so that they can be embedded dynamically
-                  obj.temp_popular_tweets.push(item.retweeted_status.id_str);
+                  obj.temp.popular_tweets.push(item.retweeted_status.id_str);
 
                   // console.log('pushed greater retweet count to populars')
                 }
               } else {
-                obj.temp_tweetTypes.push('OC');
+                obj.temp.tweetTypes.push('OC');
               }
 
               if(Math.floor(Math.random() * 4)+1 == 3) {
               	savedExample = item.text;
               }
 
-              obj.temp_usableTweets += 1
+              obj.temp.usableTweets += 1
               obj.tweets_this_window += 1;
               obj.collectedTweets += 1;
               obj.uniques.push(item.user.id_str);
-              obj.temp_sentiments.push(sentiment.analyze(item.text).score)
+              obj.temp.sentiments.push(sentiment.analyze(item.text).score)
 
-              helperFunctions.sterilizeTweet(item.text, obj.temp_wordpool, commons);
+              helperFunctions.sterilizeTweet(item.text, obj.temp.wordpool, commons);
             }
 
             next();
@@ -627,7 +660,7 @@ function searchLoop() {
           if(parseInt(reset.substring(0,2)) == 0 && parseInt(reset.substring(3, 5)) < searchInterval) {
             obj.searchInfo.window_count+=1;
             obj.nextWindow = null;
-            obj.temp_times.push({y:obj.tweets_this_window, x: moment().format('X')});
+            obj.temp.times.push({y:obj.tweets_this_window, x: moment().format('X')});
             obj.tweets_this_window = 0;
 
             if(obj.searchInfo.window_average <= obj.config.tooLow) {
@@ -659,16 +692,16 @@ function searchLoop() {
           console.log('\n + ∞ ' + obj.query + ' @ ' + obj.currentDepth + ' / ' + obj.config.depth + ' / (' + obj.filename + ')');
           console.log(' |   ' + obj.collectedTweets + ' / ' + Math.floor(obj.count));
           console.log(' | Σ ' + Math.ceil(obj.searchInfo.window_average) + '(' + obj.searchInfo.window_count +') > ' + obj.config.tooLow);
-          console.log(' | + ' + obj.temp_usableTweets + ' / ' + tweets.statuses.length);
+          console.log(' | + ' + obj.temp.usableTweets + ' / ' + tweets.statuses.length);
           console.log(' | \n | ☇ ' + reset)
           console.log(' | ⧗ ' + moment(obj.searchInfo.startTime).toNow(true))
           console.log(' | ⧗ ' + moment(moment(obj.searchInfo.startTime).add(estimatedCompletion, 'minutes')).fromNow());
 
-          obj.temp_usableTweets = 0;
+          obj.temp.usableTweets = 0;
 
           if(obj.collectedTweets >= obj.count || obj.low_frequency) {
             // this request is complete.
-            obj.temp_times.push({y:obj.tweets_this_window, x: moment().format('X')});
+            obj.temp.times.push({y:obj.tweets_this_window, x: moment().format('X')});
 
             if(obj.low_frequency) {
               console.log(' ! ' + obj.query + ' has a low frequency.')

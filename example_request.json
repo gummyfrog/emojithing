@@ -1,6 +1,6 @@
 {
-  "query" : "love",
-  "count" : 3000,
+  "query" : "bowsette",
+  "count" : 3200,
   "config" : {
     "cutoffs" : {
       "words" : {
@@ -20,8 +20,8 @@
       }
     },
     "childQueries" : 2,
-    "tooLow" : 30,
-    "depth" : 2,
-    "divisor" : 2
+    "tooLow" : 10,
+    "depth" : 1,
+    "divisor" : 4
   }
 }
