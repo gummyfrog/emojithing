@@ -1,11 +1,11 @@
 {
-  "query" : "developer",
-  "count" : 3200,
+  "query" : "kavanaugh",
+  "count" : 100000,
   "config" : {
     "cutoffs" : {
       "words" : {
         "type" : "percentage",
-        "value" : 50
+        "value" : 30
       },
       "emojis" : {
         "type" : "percentage",
@@ -13,15 +13,15 @@
       },
       "hashtags" : {
         "type" : "percentage",
-        "value" : 30
+        "value" : 25
       },
       "decimate" : {
         "step" : 1
       }
     },
-    "childQueries" : 2,
-    "tooLow" : 10,
-    "depth" : 1,
-    "divisor" : 4
+    "childQueries" : 7,
+    "tooLow" : 0,
+    "depth" : 3,
+    "divisor" : 5
   }
 }

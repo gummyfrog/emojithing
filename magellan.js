@@ -34,8 +34,6 @@ var delay = 2;
 fs.writeFileSync('./magellan/uniques.txt', '');
 
 
-
-
 // temporary data creates a temporary pool of words for this emoji cycle, to be processed later
 function makeTemporaryData(words, emoji) {
   fs.appendFile("./magellan/temp/" + emoji + ".txt", words.join(','), function (err) {
