@@ -1,11 +1,16 @@
 {
+<<<<<<< HEAD
   "query" : "love",
   "count" : 500,
+=======
+  "query" : "kavanaugh",
+  "count" : 100000,
+>>>>>>> 9e7dfb182a2c18ea74c74f4261867996c0ba8e7b
   "config" : {
     "cutoffs" : {
       "words" : {
         "type" : "percentage",
-        "value" : 50
+        "value" : 30
       },
       "emojis" : {
         "type" : "percentage",
@@ -13,15 +18,22 @@
       },
       "hashtags" : {
         "type" : "percentage",
-        "value" : 30
+        "value" : 25
       },
       "decimate" : {
         "step" : 1
       }
     },
+<<<<<<< HEAD
     "childQueries" : 6,
     "tooLow" : 5,
     "depth" : 2,
     "divisor" : 2
+=======
+    "childQueries" : 7,
+    "tooLow" : 0,
+    "depth" : 3,
+    "divisor" : 5
+>>>>>>> 9e7dfb182a2c18ea74c74f4261867996c0ba8e7b
   }
 }
