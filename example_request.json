@@ -1,6 +1,6 @@
 {
-  "query" : "developer",
-  "count" : 3200,
+  "query" : "love",
+  "count" : 500,
   "config" : {
     "cutoffs" : {
       "words" : {
@@ -19,9 +19,9 @@
         "step" : 1
       }
     },
-    "childQueries" : 2,
-    "tooLow" : 10,
-    "depth" : 1,
-    "divisor" : 4
+    "childQueries" : 6,
+    "tooLow" : 5,
+    "depth" : 2,
+    "divisor" : 2
   }
 }

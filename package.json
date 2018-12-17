@@ -2,15 +2,13 @@
   "name": "frogeye",
   "version": "1.0.1",
   "description": "Crystal ball for the Ultimate Socialite.",
-  "main": "main.js",
+  "main": "./bin/www",
   "scripts": {
-    "vis": "electron .",
-    "frog": "node magi.js -s",
-    "start": "node magi.js -s"
+    "start": "node ./bin/www"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gummyfrog/emojithing.git"
+    "url": "git+https://github.com/gummyfrog/frogeye.git"
   },
   "keywords": [
     "Emoji",
@@ -24,25 +22,31 @@
   "author": "gummyfrog",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/gummyfrog/emojithing/issues"
+    "url": "https://github.com/gummyfrog/frogeye/issues"
   },
-  "homepage": "https://github.com/gummyfrog/emojithing#readme",
-  "devDependencies": {
-    "electron": "^2.0.10"
-  },
+  "homepage": "https://github.com/gummyfrog/frogeye#readme",
   "dependencies": {
     "axios": "^0.18.0",
+    "body-parser": "^1.18.3",
+    "cookie-parser": "^1.4.3",
     "emoji-strip": ">=0.0.1",
     "emoji-tree": ">=0.0.1",
+    "express": "^4.16.4",
+    "jade": "^1.11.0",
     "jsonfile": ">=0.0.1",
     "log-update": "^2.3.0",
     "minimist": ">=0.0.1",
     "moment": ">=0.0.1",
+    "morgan": "^1.9.1",
     "mysql": ">=0.0.1",
     "node-async-loop": ">=0.0.1",
     "node-cleanup": "^2.1.2",
     "node-ipc": ">=0.0.1",
+    "nodemon": "^1.18.6",
+    "path": "^0.12.7",
     "sentiment": "^5.0.1",
+    "serve-favicon": "^2.5.0",
+    "stylus": "^0.54.5",
     "twitter": ">=0.0.1"
   }
 }

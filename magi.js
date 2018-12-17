@@ -23,6 +23,8 @@ class Magi {
 		this.commons = fs.readFileSync('./magellan/commons.txt', 'utf8').split(',');
 		this.frameCount = 0;
 		this.requestCount = 0;
+		this.tweetsCollectedThisLoop = 0;
+		this.totalTweetsCollected = 0;
 	};
 
 	start() {
@@ -197,7 +199,6 @@ class Magi {
 	      console.log(' o No requests found!')
 	      return;
 	    }
-	    this.requestCount = files.length-2;
 	    for(var i=2;i<files.length;i++) {
 	      jsonfile.readFile('./magi/requests/' + files[i], (err, obj) => {
 	        if(err) throw err;
@@ -496,11 +497,13 @@ class Magi {
 	}
 
 	searchLoop() {
+	  this.tweetsCollectedThisLoop = 0;
 	  console.log('\n')
 	  console.log(' ⧗ ' + moment().format("MMM Do, h:mm:ss a"))
 	  console.log(this.occupiedClientNumbers);
 	  fs.readdir('./magi/requests', (err, files) => {
 	    console.log(' + Entered /requests')
+	    this.requestCount = files.length-2;
 
 	    if(files.length <= 2) {
 	      console.log(' o No requests found!')
@@ -550,6 +553,7 @@ class Magi {
 	        // this.getRateLimit(obj.clientNum);
 	        this.clients[obj.clientNum].get('search/tweets', {q: obj.query, result_type: 'recent', lang: 'en', count: 100}, (error, tweets, response) => {
 	          if(error) {
+	          	console.log(error);
 	            console.log(obj.clientNum + ' ran out of requests.');
 	            console.log(this.getRateLimit(obj.clientNum))
 	            return;
@@ -626,7 +630,9 @@ class Magi {
 	          if(moment().isAfter(moment(estimatedCompletion))) {
 	            estimatedCompletion = ((((obj.count - obj.collectedTweets) / obj.searchInfo.window_average) + obj.searchInfo.window_count+2) * 15);
 	          }
-
+	          this.tweetsCollectedThisLoop += obj.temp.usableTweets;
+	          this.totalTweetsCollected += obj.temp.usableTweets;
+	          
 	          console.log('\n + ∞ ' + obj.query + ' @ ' + obj.currentDepth + ' / ' + obj.config.depth + ' / (' + obj.filename + ')');
 	          console.log(' |   ' + obj.collectedTweets + ' / ' + Math.floor(obj.count));
 	          console.log(' | Σ ' + Math.ceil(obj.searchInfo.window_average) + '(' + obj.searchInfo.window_count +') > ' + obj.config.tooLow);

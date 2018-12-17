@@ -1,0 +1,50 @@
+body {
+  font: 18px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+.chart {
+  width: 115% !important;
+  left: -10% !important;
+  margin: none !important;
+  position: fixed;
+  bottom: 0;
+}
+
+
+p {
+  font-family: "Helvetica Neue", sans-serif;
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 30px;
+}
+
+.gum {
+  text-align: center;
+  font-family: "Helvetica Neue", sans-serif;
+  font-size: 60px;
+  line-height: 0px;
+  font-weight: 400;
+}
+
+.subgum {
+  text-align: center;
+  font-family: "Helvetica Neue", sans-serif;
+  font-size: 21px;
+  line-height: 0px;
+  font-weight: 300;
+}
+
+.content {
+  padding: 50px;
+  width: 80%;
+  margin: auto;
+}
+
+.centered {
+  text-align: center;
+  margin: auto;
+}
+
+.odometer {
+  font-size: 230px;
+}
