@@ -127,3 +127,109 @@ exports.decimate = function(data, step) {
   // console.log(decimated);
   return decimated;
 }
+
+exports.findObj = function(objects, key, value) {
+    for (var i = 0; i < objects.length; i++) {
+      if (objects[i][key] === value) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+
+exports.getEmojisFromString = function(string) {
+  return emojiTree(string).filter(obj => obj.type == 'emoji').map(obj => obj.text);
+}
+
+
+exports.wordsFor = function(dict, count) {
+    var data = Object.keys(dict).map(key => {
+      return {
+        key: key,
+        value: dict[key]
+      };
+    })
+
+    data.sort((a, b) => {
+      return b.value - a.value
+    })
+
+    // console.log(data.slice(0, count));
+    return data.slice(0, count);
+  }
+
+exports.highestFrequencyinData = function(data) {
+  var tempCounts = {};
+  for (var t = 0; t < data.length; t++) {
+    var num = data[t];
+    tempCounts[num] = tempCounts[num] ? tempCounts[num] + 1 : 1;
+  }
+  var p = Object.keys(tempCounts).map(i => tempCounts[i]).sort((a, b) => {
+    return b - a
+  })
+
+  return p[0];
+}
+
+
+exports.removeFrom = function(list, items) {
+    for (var q = 0; q < items.length; q++) {
+      list.splice(list.indexOf(items[q]), 1);
+    }
+    items = [];
+  }
+
+exports.trimData = function(data) {
+    for (var key in data) {
+      if (['number'].includes(typeof (data[key]))) {
+        continue;
+      }
+
+      var returnObj = {};
+      var slicedData = Object.keys(data[key]).map(dataKey => {
+        return {
+          key: dataKey,
+          value: data[key][dataKey]
+        }
+      }).sort((a, b) => {
+        return b.value - a.value
+      })
+
+
+      for (var i = 0; i < slicedData.length; i++) {
+        returnObj[slicedData[i].key] = slicedData[i].value;
+      }
+
+      data[key] = returnObj;
+    }
+
+  }
+
+exports.formatHashtagObjs = function(objArray) {
+    objArray.sort((a, b) => {
+      return b.currentDepth - a.currentDepth;
+    });
+
+    for (var x = 0; x < objArray.length; x++) {
+      var hashtag = objArray[x];
+      console.log(' § ' + hashtag.filename + ' ' + hashtag.currentDepth + '   [' + hashtag.children + ']');
+      for (var j = 0; j < hashtag.children.length; j++) {
+        // delete has/htag._filename;
+        var indexOfChild = findObj(objArray, 'filename', hashtag.children[j]);
+        var childObj = objArray[indexOfChild];
+        if (childObj == undefined) {
+          // console.log("Couldn't find child: " + hashtag.children[j]);
+        } else {
+          // console.log('    √ ' +childobj.filename + ' ' + childObj.currentDepth + ' is child of ' + hashtag._filename)
+          if (childObj.hasOwnProperty('data')) {
+            trimData(childObj.data)
+          };
+
+          hashtag.hashtagObjs.push(childObj);
+        }
+      }
+    }
+
+    return objArray.filter(obj => obj.currentDepth == 1);
+  }

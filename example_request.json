@@ -1,6 +1,6 @@
 {
-  "query" : "love",
-  "count" : 500,
+  "query" : "#missuniverse",
+  "count" : 500000,
   "config" : {
     "cutoffs" : {
       "words" : {
@@ -19,9 +19,9 @@
         "step" : 1
       }
     },
-    "childQueries" : 6,
-    "tooLow" : 5,
-    "depth" : 2,
-    "divisor" : 2
+    "childQueries" : 12,
+    "tooLow" : 0,
+    "depth" : 20,
+    "divisor" : 4
   }
 }

@@ -13,9 +13,7 @@ jsonfile.readFile('./clients/magellan.json', function(err, obj) {
 })
 
 const commons = fs.readFileSync('./magellan/commons.txt', 'utf8').split(',');
-
 const desiredTweetCount = 500;
-
 const emojiCensusList = fs.readFileSync('./magellan/emoji.txt', 'utf8').split(' ');
 const params = {
     q: 'test',
@@ -23,7 +21,6 @@ const params = {
     include_entities: 'false',
     locale: 'en',
   }
-
 const savedState = fs.readFileSync('./magellan/currentIndex.txt', 'utf8').split(',');
 
 var currentEmojiIndex = parseInt(savedState[0]);
