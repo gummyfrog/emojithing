@@ -1,35 +1,74 @@
-
-var fs = require('fs');
-var Twitter = require('twitter');
-var logUpdate = require('log-update');
-var jsonfile = require('jsonfile')
-var argv = require('minimist')(process.argv.slice(2));
-var asyncLoop = require('node-async-loop');
-var emojiTree = require('emoji-tree');
-var moment = require('moment');
-var Sentiment = require('sentiment')
-
+const fs = require('fs');
+const Twitter = require('twitter');
+const logUpdate = require('log-update');
+const jsonfile = require('jsonfile')
+const argv = require('minimist')(process.argv.slice(2));
+const asyncLoop = require('node-async-loop');
+const emojiTree = require('emoji-tree');
+const moment = require('moment');
+const Sentiment = require('sentiment')
+const helperFunctions = require('./helperFunctions.js');
 
 class Magi {
 
 	constructor() {
 		moment().format();
-		this.searchInterval = 8;
+		this.sentiment = new Sentiment();
+		this.commons = fs.readFileSync('./src/commons.txt', 'utf8').split(',');
 		this.frames = ["•••", "•••", "o••", "•o•", "••o", "•••", "o••", "oo•", "ooo", "ooo", "ooo", "•oo", "••o"];
-		this.helperFunctions = require('./helperFunctions.js');
 		this.occupiedClientNumbers = [];
 		this.clients = [];
-		this.sentiment = new Sentiment();
 		this.fileNames = [];
-		this.commons = fs.readFileSync('./magellan/commons.txt', 'utf8').split(',');
+		this.searchInterval = 8;
 		this.frameCount = 0;
 		this.requestCount = 0;
 		this.tweetsCollectedThisLoop = 0;
 		this.totalTweetsCollected = 0;
 	};
 
+
+	// Misc
+
+
+	frameUpdate(msg) {
+		this.frameCount += 0.001;
+		const frame = this.frames[Math.floor(this.frameCount) % this.frames.length];
+		logUpdate(` ${frame} ${msg}`)
+	}
+
+
+	// Start
+
+
 	start() {
-		this.awake();
+		this.initializeClients(this.clients);
+
+		fs.readdir('./src/magi/requests', (err, files) => {
+			if (files.length <= 2) {
+				console.log(' o No requests found!')
+				return;
+			}
+			for (var i = 2; i < files.length; i++) {
+				jsonfile.readFile('./src/magi/requests/' + files[i], (err, obj) => {
+					if (err) throw err;
+					if (obj.clientNum != -1) {
+						this.occupiedClientNumbers.push(obj.clientNum);
+					}
+				});
+			}
+		});
+
+		fs.readdir('./src/magi/products', (err, files) => {
+			if (files.length <= 1) {
+				return;
+			}
+
+			console.log(' o Products:')
+			for (var i = 1; i < files.length; i++) {
+				console.log(' | ' + files[i])
+			}
+		});
+
 		this.searchLoopRef = setInterval((function (self) {
 			return function () {
 				self.searchLoop();
@@ -37,10 +76,14 @@ class Magi {
 		})(this), 1000 * this.searchInterval);
 	}
 
+
+	// Twitter Client Management
+
+
 	getRateLimit(client) {
 		this.clients[client].get('application/rate_limit_status', {}, (error, response) => {
 			if (error) {
-				console.log('Hit the rate limit for Rate Limit checks.')
+				console.log('Hit the rate limit for Rate Limit checks. Ironic...')
 			} else {
 				console.log(' ⧖ Client #' + client + ' : ' + response.resources.search['/search/tweets'].remaining + ' / 450');
 			}
@@ -48,7 +91,7 @@ class Magi {
 	}
 
 	initializeClients(clientsArray) {
-		fs.readdir('./clients', (err, files) => {
+		fs.readdir('./src/clients', (err, files) => {
 			if (files == undefined) {
 				console.error('ERR: No directory for Twitter this.clients found. Should be named "this.clients".');
 				process.exit();
@@ -57,7 +100,7 @@ class Magi {
 			console.log(' + Entered ./clients')
 			for (var i = 1; i < files.length - 1; i++) {
 				console.log(' | Reading / ' + files[i]);
-				jsonfile.readFile('./clients/' + files[i], (err, obj) => {
+				jsonfile.readFile('./src/clients/' + files[i], (err, obj) => {
 					var client = new Twitter(obj);
 					clientsArray.push(client);
 				})
@@ -83,6 +126,10 @@ class Magi {
 		return -1;
 	}
 
+
+	// Requests
+
+
 	generateFileName(title, requestParent, parentFileName) {
 		var generated;
 		if (requestParent == null || parentFileName == null) {
@@ -93,10 +140,8 @@ class Magi {
 		if (this.fileNames.indexOf(generated) != -1) {
 			generated = this.generateFileName(title, requestParent);
 		}
-
 		return generated;
 	}
-
 
 	request(options) {
 
@@ -122,7 +167,7 @@ class Magi {
 
 		// obj.children.push(request({query: topHashtags[x].key, count: obj.count/1.2, depth: obj.config.depth, currentDepth: obj.currentDepth+1, childQueries: obj.config.childQueries, parentFileName:obj.parentFileName, requestParent: obj.query, cutoffs: obj.cutoffs, tooLow: obj.config.tooLow, isChild: true}))
 
-		jsonfile.writeFileSync('./magi/requests/query-' + filename + '.json', {
+		jsonfile.writeFileSync('./src/magi/requests/query-' + filename + '.json', {
 
 			// configured at the start
 
@@ -179,82 +224,6 @@ class Magi {
 		return filename;
 	}
 
-	awake() {
-		this.initializeClients(this.clients);
-
-		fs.readdir('./magi/requests', (err, files) => {
-			if (files.length <= 2) {
-				console.log(' o No requests found!')
-				return;
-			}
-			for (var i = 2; i < files.length; i++) {
-				jsonfile.readFile('./magi/requests/' + files[i], (err, obj) => {
-					if (err) throw err;
-					if (obj.clientNum != -1) {
-						this.occupiedClientNumbers.push(obj.clientNum);
-					}
-				});
-			}
-		});
-
-		fs.readdir('./magi/products', (err, files) => {
-			if (files.length <= 1) {
-				return;
-			}
-
-			console.log(' o Products:')
-			for (var i = 1; i < files.length; i++) {
-				console.log(' | ' + files[i])
-			}
-		});
-	}
-
-
-	makeFrequencyDict(data, cutoff) {
-		var counts = {};
-		var result = {};
-		var cutStorage = cutoff.value;
-
-		logUpdate(' √ Made Dictionary from ' + data.length + ' items...')
-
-		if (cutoff.type == 'percentage') {
-			var highFreq = this.highestFrequencyinData(data)
-			cutStorage = (cutoff.value / 100) * highFreq;
-			// console.log(cutoff.value + ' percent of ' + highFreq  + ' is ' + cutStorage);
-		}
-
-		for (var i = 0; i < data.length; i++) {
-			var num = data[i];
-			counts[num] = counts[num] ? counts[num] + 1 : 1;
-		}
-		for (var key in counts) {
-			if (counts.hasOwnProperty(key) && counts[key] > cutStorage) {
-				result[key] = counts[key];
-			}
-		}
-
-		var backToArray = Object.keys(result).map(key => ({
-			key: key,
-			value: result[key]
-		})).sort((a, b) => {
-			return b.value - a.value
-		});
-		var backToObject = {};
-		for (var l = 0; l < backToArray.length; l++) {
-			backToObject[backToArray[l].key] = backToArray[l].value;
-		}
-
-
-		return (backToObject);
-	}
-
-	frameUpdate(msg) {
-		this.frameCount += 0.001;
-		const frame = this.frames[Math.floor(this.frameCount) % this.frames.length];
-		logUpdate(` ${frame} ${msg}`)
-	}
-
-
 	makeData(words, tweetTypes, times, popular, cutoffs, sentiments) {
 		const emojiRegex = /(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\u3299|\u3297|\u303d|\u3030|\u24c2|\ud83c[\udd70-\udd71]|\ud83c[\udd7e-\udd7f]|\ud83c\udd8e|\ud83c[\udd91-\udd9a]|\ud83c[\udde6-\uddff]|[\ud83c[\ude01-\ude02]|\ud83c\ude1a|\ud83c\ude2f|[\ud83c[\ude32-\ude3a]|[\ud83c[\ude50-\ude51]|\u203c|\u2049|[\u25aa-\u25ab]|\u25b6|\u25c0|[\u25fb-\u25fe]|\u00a9|\u00ae|\u2122|\u2139|\ud83c\udc04|[\u2600-\u26FF]|\u2b05|\u2b06|\u2b07|\u2b1b|\u2b1c|\u2b50|\u2b55|\u231a|\u231b|\u2328|\u23cf|[\u23e9-\u23f3]|[\u23f8-\u23fa]|\ud83c\udccf|\u2934|\u2935|[\u2190-\u21ff])/g
 
@@ -272,7 +241,7 @@ class Magi {
 			}
 		});
 
-		this.removeFrom(words, toRemove);
+		helperFunctions.removeFrom(words, toRemove);
 		logUpdate(' √ Collecting Hashtags')
 		console.log(' : Collecting Emojis...')
 
@@ -284,7 +253,7 @@ class Magi {
 			}
 		}).map(string => this.getEmojisFromString(string)));
 
-		this.removeFrom(words, toRemove);
+		helperFunctions.removeFrom(words, toRemove);
 
 
 		logUpdate(' √ Collecting Emojis')
@@ -292,10 +261,10 @@ class Magi {
 		var total = sentiments.length;
 
 		var positiveTweets = sentiments.filter(num => Math.sign(num) == 1);
-		this.removeFrom(sentiments, positiveTweets);
+		helperFunctions.removeFrom(sentiments, positiveTweets);
 
 		var negativeTweets = sentiments.filter(num => Math.sign(num) == -1);
-		this.removeFrom(sentiments, negativeTweets);
+		helperFunctions.removeFrom(sentiments, negativeTweets);
 
 		var neutralTweets = sentiments;
 
@@ -310,19 +279,19 @@ class Magi {
 			negativeTweets: Math.round((negativeTweets.length / total) * 100),
 			neutralTweets: Math.round((neutralTweets.length / total) * 100),
 			popular: popular,
-			hashtags: this.makeFrequencyDict(hashtags, cutoffs.hashtags),
-			emojis: this.makeFrequencyDict(emojis, cutoffs.emojis),
-			words: this.makeFrequencyDict(words, cutoffs.words),
-			types: this.makeFrequencyDict(tweetTypes, {
+			hashtags: helperFunctions.makeFrequencyDict(hashtags, cutoffs.hashtags),
+			emojis: helperFunctions.makeFrequencyDict(emojis, cutoffs.emojis),
+			words: helperFunctions.makeFrequencyDict(words, cutoffs.words),
+			types: helperFunctions.makeFrequencyDict(tweetTypes, {
 				type: 'cutoff',
 				value: 0
 			}),
-			times: this.helperFunctions.decimate(times, cutoffs.decimate.step)
+			times: helperFunctions.decimate(times, cutoffs.decimate.step)
 		})
 	}
 
 	requestComplete(obj) {
-		jsonfile.writeFileSync('./magi/requests/incomplete_backups/query-' + obj.filename + '.json', obj);
+		jsonfile.writeFileSync('./src/magi/requests/incomplete_backups/query-' + obj.filename + '.json', obj);
 		this.deoccupyclient(obj.clientNum)
 
 		obj.data = this.makeData(obj.temp.wordpool, obj.temp.tweetTypes, obj.temp.times, obj.temp.popular_tweets, obj.config.cutoffs, obj.temp.sentiments)
@@ -333,7 +302,7 @@ class Magi {
 		}
 
 		obj.temp.wordpool = [];
-		var topHashtags = this.wordsFor(obj.data.hashtags, obj.config.childQueries);
+		var topHashtags = helperFunctions.topFromDict(obj.data.hashtags, obj.config.childQueries);
 
 		if (obj.currentDepth != obj.config.depth) {
 			console.log(' X Requesting ' + topHashtags.length + ' more searches.');
@@ -362,26 +331,25 @@ class Magi {
 		obj.searchInfo.endTime = moment();
 
 		if (obj.isChild) {
-			let parentObj = jsonfile.readFileSync('./magi/products/product-' + obj.parentFileName + '.json');
+			let parentObj = jsonfile.readFileSync('./src/magi/products/product-' + obj.parentFileName + '.json');
 			parentObj.hashtagObjs.push(obj);
-			jsonfile.writeFileSync('./magi/products/product-' + parentObj.filename + '.json', parentObj);
+			jsonfile.writeFileSync('./src/magi/products/product-' + parentObj.filename + '.json', parentObj);
 		} else {
-			jsonfile.writeFileSync('./magi/products/product-' + obj.filename + '.json', obj);
+			jsonfile.writeFileSync('./src/magi/products/product-' + obj.filename + '.json', obj);
 		}
 
-		if (fs.existsSync('./magi/requests/query-' + obj.filename + '.json')) {
+		if (fs.existsSync('./src/magi/requests/query-' + obj.filename + '.json')) {
 			console.log(' - Unlinking ' + obj.filename);
-			fs.unlinkSync('./magi/requests/query-' + obj.filename + '.json');
+			fs.unlinkSync('./src/magi/requests/query-' + obj.filename + '.json');
 		} else {
 			// console.log(' - Was already unlinked. Ghost request.')
 		}
 	};
 
 	collapseProduct(product) {
-		jsonfile.readFile('./magi/products/' + product, (err, obj) => {
+		jsonfile.readFile('./src/magi/products/' + product, (err, obj) => {
 			if (err) throw err;
-
-
+			// change this to loop
 			delete obj.parentFileName;
 			delete obj.requestParent;
 			delete obj.clientNum;
@@ -394,7 +362,6 @@ class Magi {
 			delete obj.count;
 			delete obj.low_frequency;
 			delete obj.collectedTweets;
-
 
 			for (var key in obj.hashtagObjs) {
 				delete obj.hashtagObjs[key].parentFileName;
@@ -409,24 +376,24 @@ class Magi {
 				delete obj.hashtagObjs[key].count;
 				delete obj.hashtagObjs[key].low_frequency;
 				delete obj.hashtagObjs[key].collectedTweets;
-
-
 			}
 
-			trimData(obj.data);
-			obj.hashtagObjs = formatHashtagObjs(obj.hashtagObjs);
+			helperFunctions.trimData(obj.data);
+			obj.hashtagObjs = helperFunctions.formatHashtagObjs(obj.hashtagObjs);
 			jsonfile.writeFileSync('./magi/products/product-' + product + '-formatted.json', obj);
-
-
 		});
 	}
+
+
+	// Search
+
 
 	searchLoop() {
 		this.tweetsCollectedThisLoop = 0;
 		console.log('\n')
 		console.log(' ⧗ ' + moment().format("MMM Do, h:mm:ss a"))
 		console.log(this.occupiedClientNumbers);
-		fs.readdir('./magi/requests', (err, files) => {
+		fs.readdir('./src/magi/requests', (err, files) => {
 			console.log(' + Entered /requests')
 			this.requestCount = files.length - 2;
 
@@ -437,7 +404,7 @@ class Magi {
 
 			for (var i = 2; i < files.length; i++) {
 				// console.log(i + ' / ' + files.length);
-				jsonfile.readFile('./magi/requests/' + files[i], (err, obj) => {
+				jsonfile.readFile('./src/magi/requests/' + files[i], (err, obj) => {
 					if (obj == undefined) {
 						console.log(' e Invalid file.');
 						return;
@@ -492,9 +459,9 @@ class Magi {
 						if (tweets.statuses.length == 0) {
 							console.log('No tweets found for ' + obj.query + '. What? Unlinking.');
 							this.deoccupyclient(obj.clientNum);
-							if (fs.existsSync('./magi/requests/query-' + obj.filename + '.json')) {
+							if (fs.existsSync('./src/magi/requests/query-' + obj.filename + '.json')) {
 								console.log(' - Unlinking ' + obj.filename);
-								fs.unlinkSync('./magi/requests/query-' + obj.filename + '.json');
+								fs.unlinkSync('./src/magi/requests/query-' + obj.filename + '.json');
 							}
 							return;
 						}
@@ -528,7 +495,7 @@ class Magi {
 								obj.uniques.push(item.user.id_str);
 								obj.temp.sentiments.push(this.sentiment.analyze(item.text).score)
 
-								this.helperFunctions.sterilizeTweet(item.text, obj.temp.wordpool, this.commons);
+								helperFunctions.sterilizeTweet(item.text, obj.temp.wordpool, this.commons);
 							}
 
 							next();
@@ -590,7 +557,7 @@ class Magi {
 							return;
 						}
 
-						jsonfile.writeFileSync('./magi/requests/query-' + obj.filename + '.json', obj);
+						jsonfile.writeFileSync('./src/magi/requests/query-' + obj.filename + '.json', obj);
 
 					});
 
@@ -602,19 +569,7 @@ class Magi {
 
 }
 
-
 module.exports = Magi;
-
-
-// setTimeout(function() { getRateLimit(0) }, 1000 * 1);
-
-// recommended pareto-form values:
-// words: 2.5%
-// emojis: 7%
-// hashtags: 10%
-
-// obj.children.push(request({query: topHashtags[x].key, count: obj.count/1.2, depth: obj.config.depth, currentDepth: obj.currentDepth+1, childQueries: obj.config.childQueries, parentFileName:obj.parentFileName, requestParent: obj.query, cutoffs: obj.cutoffs, tooLow: obj.config.tooLow, isChild: true}))
-
 
 // var options = {
 //   query: 'love',
@@ -643,69 +598,6 @@ module.exports = Magi;
 //     divisor: 2
 //   }
 // };
-// setTimeout(function() { request(options) }, 1000 * 1);
 
 // decimate step is in window intervals: 4 windows = 1 hour, 1 window = 15m
-
-
-// setInterval(searchLoop, 1000 * this.searchInterval);
-// collapseProduct('love1005');
-
-
-// var searchLoopRef = null;
-
-// function check(argv) {
-// 	if(argv.a) { 
-// 	    if(searchLoopRef != null) {
-// 	      console.log(' X Stopping')
-// 	      clearInterval(searchLoopRef);
-// 	    }
-// 	    process.exit()
-// 	}
-
-// 	if(argv.s) {
-// 	  awake();
-// 	  searchLoopRef = setInterval(searchLoop, 1000 * this.searchInterval);
-// 	}
-
-// 	if(argv.hasOwnProperty('r')) {
-// 	  if(argv.r == true) {
-// 	    console.log('Asked to Request, but no path given.');
-// 	  } else {
-// 	    console.log(argv.r);
-// 	    jsonfile.readFile(argv.r, function(err, obj) {
-// 	      setTimeout(function() { request(obj) }, 1000 * 1);
-// 	    });
-// 	  }
-// 	}
-
-// 	if(argv.hasOwnProperty('c')) {
-// 	  if(argv.c == true) {
-// 	    console.log('Asked to Collapse, but no product name given.');
-// 	  } else {
-// 	    console.log(argv.c);
-// 	    collapseProduct(argv.c);
-// 	  }
-// 	}
-
-// 	if(argv.hasOwnProperty('l')) {
-// 	  if(argv.l == true) {
-// 	    console.log('Asked to Low Frequency, but no path given.');
-// 	  } else {
-// 	    console.log(argv.l);
-// 	    jsonfile.readFile('magi/requests/'+argv.l, function(err, obj) {
-// 	      if(err) {
-// 	        console.log('Invalid Path');
-// 	        return;
-// 	      }
-// 	      obj.low_frequency = true;
-// 	      jsonfile.writeFile('magi/requests/'+argv.l, obj, function(err) {
-// 	        console.log("Low Frequency'd")
-// 	      });
-// 	    });
-// 	  }
-// 	}
-// }
-
-// check(argv);
 

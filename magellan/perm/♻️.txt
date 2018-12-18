@@ -1,1 +1,0 @@
-find|10,cell|18,phone|18,numberfind|8,number|9,numberlife|1,crazy|1,

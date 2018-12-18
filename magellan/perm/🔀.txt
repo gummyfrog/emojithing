@@ -1,1 +1,0 @@
-cross|1,movement|1,boundaries|1,campaign|1,issue|1,brand|1,
