@@ -216,7 +216,7 @@ exports.makeFrequencyDict = function (data, cutoff) {
 		backToObject[backToArray[l].key] = backToArray[l].value;
 	}
 
-	logUpdate(`√ Made Dictionary from ${data.length} items...`)
+	console.log(`√ Made Dictionary from ${data.length} items...`)
 
 	return (backToObject);
 }
