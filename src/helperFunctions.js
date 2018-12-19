@@ -1,4 +1,5 @@
 const fs = require('fs');
+const emojiTree = require('emoji-tree');
 
 exports.sterilizeTweet = function (tweetText, pool, excludeArray) {
 	// returns a sterilized version of a tweet, and pushes said words to a passed word pool (removes special characters, emojis, links, excluded words, numbers)
