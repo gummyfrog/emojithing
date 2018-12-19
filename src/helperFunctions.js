@@ -235,6 +235,7 @@ exports.objarrayhtml = function(objarray) {
 	var returnHtml = "";
 	for(var x=0;x<objarray.length;x++) {
 		returnHtml += objhtml(objarray[x]);
+		returnHtml += "<br>"
 	}
 	return returnHtml;
 }
