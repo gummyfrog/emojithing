@@ -219,3 +219,21 @@ exports.makeFrequencyDict = function (data, cutoff) {
 	return (backToObject);
 }
 
+objhtml = function(obj) {
+	var returnHtml = "";
+	var keys = Object.keys(obj);
+	for(var i=0; i<keys.length; i++) {
+		var key = keys[i];
+		returnHtml += `<span class="obj"><p class="key">${key}</p> <p class="value">${obj[key]}</p> </span>`;
+	}
+	return returnHtml;
+}
+
+exports.objarrayhtml = function(objarray) {
+	var returnHtml = "";
+	for(var x=0;x<objarray.length;x++) {
+		returnHtml += objhtml(objarray[x]);
+	}
+	return returnHtml;
+}
+

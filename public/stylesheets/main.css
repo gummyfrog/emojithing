@@ -11,7 +11,43 @@ body {
 }
 
 
-p {
+.queryFeed {
+  text-align: left;
+  float: left;
+  width: 50%;
+  left: 0;
+  top: 0;
+  opacity: 0.4;
+}
+
+.clientFeed {
+  text-align: right;
+  float: right;
+  width: 50%;
+  right: 0;
+  top: 0;
+  opacity: 0.4;
+}
+
+
+.flash {
+  animation:flash 1s;
+}
+
+@keyframes flash {
+  0% {opacity: 0;}
+  100% {opacity: 0.4;}
+}
+
+.key {
+  display: inline-block;
+}
+
+.value {
+  display: inline-block;
+}
+
+p:not(.key):not(.value) {
   font-family: "Helvetica Neue", sans-serif;
   font-size: 23px;
   font-weight: 400;
@@ -35,8 +71,6 @@ p {
 }
 
 .content {
-  padding: 50px;
-  width: 80%;
   margin: auto;
 }
 

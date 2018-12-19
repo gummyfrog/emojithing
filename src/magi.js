@@ -19,6 +19,8 @@ class Magi {
 		this.occupiedClientNumbers = [];
 		this.clients = [];
 		this.fileNames = [];
+		this.queryInfo = [];
+		this.clientInfo = [];
 		this.searchInterval = 8;
 		this.frameCount = 0;
 		this.requestCount = 0;
@@ -402,6 +404,9 @@ class Magi {
 				return;
 			}
 
+			// looping through requests...
+			this.queryInfo = [];
+			this.clientInfo = [];
 			for (var i = 2; i < files.length; i++) {
 				// console.log(i + ' / ' + files.length);
 				jsonfile.readFile('./src/magi/requests/' + files[i], (err, obj) => {
@@ -532,6 +537,18 @@ class Magi {
 						}
 						this.tweetsCollectedThisLoop += obj.temp.usableTweets;
 						this.totalTweetsCollected += obj.temp.usableTweets;
+
+						this.queryInfo.push({
+							query: obj.query, 
+							rate: `${Math.ceil(obj.searchInfo.window_average)} tweets per 15m window`,
+							complete: moment(moment(obj.searchInfo.startTime).add(estimatedCompletion, 'minutes')).fromNow()
+						});
+
+						this.clientInfo.push({
+							client: obj.clientNum,
+							window: `resetting in ${reset}`
+
+						});
 
 						console.log('\n + ∞ ' + obj.query + ' @ ' + obj.currentDepth + ' / ' + obj.config.depth + ' / (' + obj.filename + ')');
 						console.log(' |   ' + obj.collectedTweets + ' / ' + Math.floor(obj.count));

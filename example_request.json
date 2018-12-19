@@ -1,6 +1,6 @@
 {
-  "query" : "#missuniverse",
-  "count" : 500000,
+  "query" : ".",
+  "count" : 50000,
   "config" : {
     "cutoffs" : {
       "words" : {
@@ -19,9 +19,9 @@
         "step" : 1
       }
     },
-    "childQueries" : 12,
+    "childQueries" : 3,
     "tooLow" : 0,
-    "depth" : 20,
+    "depth" : 3,
     "divisor" : 4
   }
 }
