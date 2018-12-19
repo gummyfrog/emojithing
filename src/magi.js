@@ -21,7 +21,7 @@ class Magi {
 		this.fileNames = [];
 		this.queryInfo = [];
 		this.clientInfo = [];
-		this.searchInterval = 8;
+		this.searchInterval = 20;
 		this.frameCount = 0;
 		this.requestCount = 0;
 		this.tweetsCollectedThisLoop = 0;
