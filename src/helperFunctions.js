@@ -190,7 +190,7 @@ exports.makeFrequencyDict = function (data, cutoff) {
 	var cutStorage = cutoff.value;
 
 	if (cutoff.type == 'percentage') {
-		var highFreq = helperFunctions.highestFrequencyinData(data)
+		var highFreq = highestFrequencyinData(data)
 		cutStorage = (cutoff.value / 100) * highFreq;
 		// console.log(cutoff.value + ' percent of ' + highFreq  + ' is ' + cutStorage);
 	}
