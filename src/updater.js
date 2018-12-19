@@ -14,7 +14,7 @@ class Updater {
     obj['desc'] = this.desc;
     obj['last'] = date.toLocaleString('en-US', this.dateOptions)
     postObj[this.name] = obj;
-    return axios.post('http://gummyfrog.herokuapp.com/site', postObj, { "headers": {"authentication": "cicadas2565"}})
+    return axios.post('http://gummyfrog.herokuapp.com/site', postObj, { "headers": {"authentication": process.env.AUTHENTICATION}})
   };
 };
 

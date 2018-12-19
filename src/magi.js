@@ -253,7 +253,7 @@ class Magi {
 				toRemove.push(string);
 				return true;
 			}
-		}).map(string => this.getEmojisFromString(string)));
+		}).map(string => helperFunctions.getEmojisFromString(string)));
 
 		helperFunctions.removeFrom(words, toRemove);
 

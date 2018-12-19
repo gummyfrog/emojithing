@@ -42,6 +42,7 @@ exports.decimate = function (data, step) {
 		group.sort(function (a, b) {
 			return b.y - a.y
 		});
+		
 		// median
 		// console.log(group[Math.floor((group.length - 1) / 2)])
 		// decimated.push(group[Math.floor((group.length - 1) / 2)]);
