@@ -42,8 +42,9 @@ class Magi {
 		// assumes only one client exists...
 		// really, having a static searchinterval is fine, should only be a problem for
 		// extremely high traffic queries.
+		console.log(this.occupiedClientNumbers.length);
 		if(this.occupiedClientNumbers.length == 0) {
-			this.searchInterval = 30;
+			this.searchInterval = 20;
 		} else {
 			this.searchInterval = 5 * this.occupiedClientNumbers.length;
 		}
