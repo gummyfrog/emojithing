@@ -1,23 +1,23 @@
 doctype
 html
-  head
-	 title= title
-	 link(rel='stylesheet', href='/stylesheets/main.css')
-	 link(rel='stylesheet' href='/stylesheets/odometer-theme-default.css')
-  body
-	 canvas#chart.chart
-	 div.content
-		div.queryFeed#queryInfo
-		div.clientFeed#clientInfo
+	head
+		title= title
+		link(rel='stylesheet', href='/stylesheets/main.css')
+		link(rel='stylesheet' href='/stylesheets/odometer-theme-default.css')
+	body
+		canvas#chart.chart
+		div.content
+			div.queryFeed#queryInfo
+			div.clientFeed#clientInfo
 
-		div.centered
-		  h1#requests.odometer
-		  h1#occupied.odometer
-		  h1#interval.odometer
+			div.centered
+				h1#requests.odometer
+				h1#occupied.odometer
+				h1#interval.odometer
 
-  footer
-	 script(src='https://cdn.jsdelivr.net/npm/moment@2.18.1/min/moment.min.js')
-	 script(src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js")
-	 script(src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js")
-	 script(src="/javascripts/odometer.min.js")
-	 script(src="/javascripts/homepage.js")
+	footer
+		script(src='https://cdn.jsdelivr.net/npm/moment@2.18.1/min/moment.min.js')
+		script(src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js")
+		script(src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js")
+		script(src="/javascripts/odometer.min.js")
+		script(src="/javascripts/homepage.js")
