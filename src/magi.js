@@ -39,17 +39,6 @@ class Magi {
 		logUpdate(` ${frame} ${msg}`)
 	}
 
-	adjustInterval() {
-		// assumes only one client exists...
-		// really, having a static searchinterval is fine, should only be a problem for
-		// extremely high traffic queries.
-		console.log(this.occupiedClientNumbers.length);
-		if(this.occupiedClientNumbers.length == 0) {
-			this.searchInterval = 20;
-		} else {
-			this.searchInterval = 5 * this.occupiedClientNumbers.length;
-		}
-	}
 
 	addEarlyCompletionQuery(query) {
 		console.log(`Adding ${query} to early completion pool...`)
@@ -75,8 +64,6 @@ class Magi {
 					}
 				});
 			}
-
-			this.adjustInterval();
 
 		});
 
@@ -135,7 +122,6 @@ class Magi {
 		// console.log('Index of ' + client + ' is ' + this.occupiedClientNumbers.indexOf(client));
 		this.occupiedClientNumbers.splice(this.occupiedClientNumbers.indexOf(client), 1);
 		// console.log('   Deoccupied Client #' + client);
-		this.adjustInterval()
 
 	}
 
@@ -144,7 +130,6 @@ class Magi {
 			if (this.occupiedClientNumbers.indexOf(i) == -1) {
 				this.occupiedClientNumbers.push(i);
 				// console.log('   Occupied Client #' + i)
-				this.adjustInterval();
 				return i;
 			}
 		}
