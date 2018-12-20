@@ -21,6 +21,7 @@ class Magi {
 		this.fileNames = [];
 		this.queryInfo = [];
 		this.clientInfo = [];
+		this.earlyCompletionQueries = [];
 		this.searchInterval = 20;
 		this.frameCount = 0;
 		this.requestCount = 0;
@@ -48,6 +49,10 @@ class Magi {
 		} else {
 			this.searchInterval = 5 * this.occupiedClientNumbers.length;
 		}
+	}
+
+	addEarlyCompletionQuery(query) {
+		this.earlyCompletionQueries.push(query);
 	}
 
 	// Start
@@ -441,6 +446,11 @@ class Magi {
 							console.log(' O Brought ' + obj.query + ' out of limbo.');
 							obj.searchInfo.startTime = moment();
 						}
+					}
+
+					if(this.earlyCompletionQueries.includes(obj.query)) {
+						console.log(' ! This was marked for early completion!');
+						obj.low_frequency = true;
 					}
 
 					// check if search is complete before searching
