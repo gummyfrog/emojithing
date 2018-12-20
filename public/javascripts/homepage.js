@@ -82,7 +82,7 @@ function getCache() {
 			console.log(status.loopCollected);
 			console.log(status);
 			addData(tweetChart, "The Now", status.loopCollected)
-
+			console.log(status.interval);
 			var timer = setInterval(function () {
 				status.interval--;
 				document.getElementById("interval").textContent = status.interval;
