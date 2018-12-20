@@ -1,121 +1,23 @@
 doctype
 html
   head
-    title= title
-    link(rel='stylesheet', href='/stylesheets/main.css')
-    link(rel='stylesheet' href='/stylesheets/odometer-theme-default.css')
+	 title= title
+	 link(rel='stylesheet', href='/stylesheets/main.css')
+	 link(rel='stylesheet' href='/stylesheets/odometer-theme-default.css')
   body
-    canvas#chart.chart
-    div.content
-      div.queryFeed#queryInfo
-      div.clientFeed#clientInfo
+	 canvas#chart.chart
+	 div.content
+		div.queryFeed#queryInfo
+		div.clientFeed#clientInfo
 
-      div.centered
-        h1#requests.odometer
-        h1#occupied.odometer
-        h1#interval.odometer
+		div.centered
+		  h1#requests.odometer
+		  h1#occupied.odometer
+		  h1#interval.odometer
 
   footer
-    script(src='https://cdn.jsdelivr.net/npm/moment@2.18.1/min/moment.min.js')
-    script(src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js")
-    script(src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js")
-    script(src="/javascripts/odometer.min.js")
-
-    script.
-      var ctx = document.getElementById('chart').getContext('2d');
-      var tweetChart = new Chart(ctx, {
-          type: 'line',
-          data: {
-              labels: [],
-              datasets: [{
-                  label: "Tweet Aggregation",
-                  backgroundColor: 'rgb(255, 99, 132)',
-                  borderColor: 'rgb(255, 99, 132)',
-                  data: [],
-                  pointRadius: 0,
-              }]
-          },
-
-          options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            legend: {
-                display: false
-            },
-            scales: {
-                xAxes: [{
-                    gridLines: {
-                        display: false,
-                        drawBorder: false,
-                        drawTicks: false,
-                    },
-                    ticks: {
-                      display: false,
-                    }
-                }],
-                yAxes: [{
-                    gridLines: {
-                        display:false,
-                        drawBorder: false,
-                        drawTicks: false,
-                    },
-                    ticks: {
-                      display: false,
-                    }
-                }]
-            }
-          }
-      });
-
-      function addData(chart, label, data) {
-        chart.data.labels.push(label);
-        chart.data.datasets.forEach((dataset) => {
-            dataset.data.push(data);
-        });
-        chart.update();
-      };
-
-
-      function getCache() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', "/requests", true);
-        xhr.send();
-         
-        xhr.onreadystatechange = processRequest;
-         
-        function processRequest(e) {
-          if (xhr.readyState == 4 && xhr.status == 200) {
-            var status = JSON.parse(xhr.response);
-            document.getElementById('requests').textContent = status.requests;
-            document.getElementById('occupied').textContent = status.occupied;
-            document.getElementById('interval').textContent = status.interval;
-            document.getElementById('queryInfo').innerHTML = status.queryInfo;
-            document.getElementById('clientInfo').innerHTML = status.clientInfo;
-
-
-            document.getElementById('queryInfo').classList.add('flash');
-            document.getElementById('clientInfo').classList.add('flash');
-
-            setTimeout(function() {
-              document.getElementById('queryInfo').classList.remove('flash');
-              document.getElementById('clientInfo').classList.remove('flash');
-            }, 1000 * 2);
-
-            console.log(status.loopCollected);
-            console.log(status);
-            addData(tweetChart, "The Now", status.loopCollected)
-
-            var timer = setInterval(function(){
-            status.interval--;
-            document.getElementById("interval").textContent = status.interval;
-            if(status.interval <= 1)
-                clearInterval(timer);
-            },1000);
-
-          };
-        };
-      };
-
-      getCache();
-      setInterval(getCache, 1000 * 20)
-
+	 script(src='https://cdn.jsdelivr.net/npm/moment@2.18.1/min/moment.min.js')
+	 script(src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js")
+	 script(src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js")
+	 script(src="/javascripts/odometer.min.js")
+	 script(src="/javascripts/homepage.js")
