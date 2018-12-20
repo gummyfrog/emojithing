@@ -68,10 +68,7 @@ app.get('/requests', function (req, res) {
 app.post('/requests', function (req, res) {
 	if (req.headers.authentication == process.env.PASSWORD) {
 		if (req.body.query && req.body.count && req.body.config.cutoffs && req.body.config.childQueries) {
-			delete req.body.password;
-			console.log(req.body)
 			res.send('Request Recieved. Passing to Magi...');
-			console.log(req.body);
 			magi.request(req.body);
 		} else {
 			console.log('Bad object.')
@@ -83,9 +80,9 @@ app.post('/requests', function (req, res) {
 })
 
 app.post('/earlyComplete', function(req, res) {
-	console.log('got a complete early request.')
-	if(req.headers.authentication == process.env.PASSWORD) {
-		console.log('password checks out.')
+	if(req.headers.authentication == 'very_secret_password') {
+		console.log(req.body);
+		res.send('Recieved...')
 	}	
 })
 
