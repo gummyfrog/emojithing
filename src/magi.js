@@ -38,7 +38,7 @@ class Magi {
 		logUpdate(` ${frame} ${msg}`)
 	}
 
-	adjustInterval(clients) {
+	adjustInterval() {
 		// assumes only one client exists...
 		// really, having a static searchinterval is fine, should only be a problem for
 		// extremely high traffic queries.
@@ -86,6 +86,8 @@ class Magi {
 				self.searchLoop();
 			}
 		})(this), 1000 * this.searchInterval);
+
+		this.adjustInterval();
 	}
 
 
@@ -554,12 +556,14 @@ class Magi {
 						this.queryInfo.push({
 							query: obj.query, 
 							rate: `${Math.ceil(obj.searchInfo.window_average)} tweets per 15m window`,
+							has: `${obj.collectedTweets} out of ${Math.floor(obj.count)} and will be `
 							complete: moment(moment(obj.searchInfo.startTime).add(estimatedCompletion, 'minutes')).fromNow()
 						});
 
 						this.clientInfo.push({
 							client: obj.clientNum,
-							window: `resetting in ${reset}`
+							window: `resetting in ${reset} and has been active `,
+							for: `${moment(obj.searchInfo.startTime).toNow(true)}`
 
 						});
 

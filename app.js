@@ -16,9 +16,6 @@ var app = express();
 var magi = new Magi();
 var updater = new Updater();
 
-console.log(process.env.AUTHENTICATION);
-console.log(process.env.PASSWORD);
-
 updater.name = "frogeye";
 updater.desc = "Crystal Ball for the Ultimate Socialite.";
 
