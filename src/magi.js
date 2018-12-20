@@ -556,7 +556,7 @@ class Magi {
 						this.queryInfo.push({
 							query: obj.query, 
 							rate: `${Math.ceil(obj.searchInfo.window_average)} tweets per 15m window`,
-							has: `${obj.collectedTweets} out of ${Math.floor(obj.count)} and will be `
+							has: `${obj.collectedTweets} out of ${Math.floor(obj.count)} and will be `,
 							complete: moment(moment(obj.searchInfo.startTime).add(estimatedCompletion, 'minutes')).fromNow()
 						});
 
