@@ -14,7 +14,7 @@ body {
 .queryFeed {
   text-align: left;
   float: left;
-  width: 50%;
+  width: 70%;
   left: 0;
   top: 0;
   opacity: 0.4;
@@ -77,6 +77,7 @@ p:not(.key):not(.value) {
 .centered {
   text-align: center;
   margin: auto;
+  position: absolute;
 }
 
 .odometer {
