@@ -77,7 +77,7 @@ p:not(.key):not(.value) {
 }
 
 .centered {
-  position: fixed;
+  float: center;
   text-align: center;
   margin: auto;
 }
