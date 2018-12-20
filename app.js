@@ -83,7 +83,7 @@ app.post('/earlyComplete', function(req, res) {
 	console.log(req.body);
 	if(req.headers.authentication == 'very_secret_password') {
 		console.log(req.body);
-		magi.addEarlyCompletionQuery(req.body.completion);
+		magi.addEarlyCompletionQuery(req.body.complete);
 		res.send('Recieved...');
 	}	
 })

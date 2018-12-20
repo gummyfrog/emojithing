@@ -52,6 +52,7 @@ class Magi {
 	}
 
 	addEarlyCompletionQuery(query) {
+		console.log(`Adding ${query} to early completion pool...`)
 		this.earlyCompletionQueries.push(query);
 	}
 
