@@ -604,33 +604,5 @@ class Magi {
 
 module.exports = Magi;
 
-// var options = {
-//   query: 'love',
-//   count: 200,
-//   config: {
-//     depth: 2,
-//     childQueries:0,
-//     cutoffs:{
-//       words:{
-//         type:'percentage',
-//         value:50
-//       },
-//       emojis:{
-//         type:'percentage',
-//         value:10
-//       },
-//       hashtags:{
-//         type:'percentage',
-//         value:30
-//       },
-//       decimate:{
-//         step: 1,
-//       }
-//     },
-//     tooLow: 100,
-//     divisor: 2
-//   }
-// };
-
 // decimate step is in window intervals: 4 windows = 1 hour, 1 window = 15m
 
