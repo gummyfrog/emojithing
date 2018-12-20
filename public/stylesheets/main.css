@@ -77,9 +77,12 @@ p:not(.key):not(.value) {
 }
 
 .centered {
-  float: center;
   text-align: center;
   margin: auto;
+}
+
+.odometers {
+  position: absolute;
 }
 
 .odometer {
