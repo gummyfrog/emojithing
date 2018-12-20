@@ -68,6 +68,9 @@ class Magi {
 					}
 				});
 			}
+
+			this.adjustInterval();
+
 		});
 
 		fs.readdir('./src/magi/products', (err, files) => {
@@ -87,7 +90,6 @@ class Magi {
 			}
 		})(this), 1000 * this.searchInterval);
 
-		this.adjustInterval();
 	}
 
 
