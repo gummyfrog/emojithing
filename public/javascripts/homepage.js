@@ -104,6 +104,7 @@ document.addEventListener('click', function (e) {
 		var params = {complete: e.target.id};
 		http.open('POST', url, true);
 
+
 		//Send the proper header information along with the request
 		http.setRequestHeader('Content-type', 'application/json');
 		http.setRequestHeader('authentication', 'very_secret_password');
@@ -113,7 +114,7 @@ document.addEventListener('click', function (e) {
 				alert(http.responseText);
 			}
 		}
-		http.send(params);
+		http.send(JSON.stringify(params));
 	}
 })
 
