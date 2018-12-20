@@ -83,9 +83,10 @@ app.post('/requests', function (req, res) {
 })
 
 app.post('/earlyComplete', function(req, res) {
+	console.log('got a complete early request.')
 	if(req.headers.authentication == process.env.PASSWORD) {
-
-	}
+		console.log('password checks out.')
+	}	
 })
 
 // catch 404 and forward to error handler

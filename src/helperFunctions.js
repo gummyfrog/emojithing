@@ -226,7 +226,11 @@ objhtml = function(obj) {
 	var keys = Object.keys(obj);
 	for(var i=0; i<keys.length; i++) {
 		var key = keys[i];
-		returnHtml += `<span class="obj"><p class="key">${key}</p> <p class="value">${obj[key]}</p> <button class ="complete" id="${key}">Complete Early?</button> </span>`;
+		if(key == "query") {
+			returnHtml += `<span class="obj"><p class="key">${key}</p> <p class="value">${obj[key]}</p> <button class ="complete" id="${key}">Complete Early?</button> </span>`;
+		} else {
+			returnHtml += `<span class="obj"><p class="key">${key}</p> <p class="value">${obj[key]}</p> </span>`;
+		}
 	}
 	return returnHtml;
 }

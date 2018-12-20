@@ -53,7 +53,7 @@ function addData(chart, label, data) {
 	chart.update();
 };
 
-
+	
 function getCache() {
 	var xhr = new XMLHttpRequest();
 	xhr.open('GET', "/requests", true);
@@ -98,7 +98,7 @@ getCache();
 setInterval(getCache, 1000 * 20)
 
 document.addEventListener('click', function (e) {
-	if (e.target && e.target.classList.includes('complete')) {
+	if (e.target && e.target.classList.contains('complete')) {
 		var http = new XMLHttpRequest();
 		var url = '/earlyComplete';
 		var params = {complete: e.target.id};
