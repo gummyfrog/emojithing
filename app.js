@@ -112,7 +112,7 @@ function post(obj) {
 		frogeye: obj
 	}, {
 		"headers": {
-			"authentication": "cicadas2565"
+			"authentication": process.env.AUTHENTICATION
 		}
 	})
 }

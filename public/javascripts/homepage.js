@@ -106,7 +106,7 @@ document.addEventListener('click', function (e) {
 
 		//Send the proper header information along with the request
 		http.setRequestHeader('Content-type', 'application/json');
-		http.setRequestHeader('authentication', process.env.PASSWORD);
+		http.setRequestHeader('authentication', 'very_secret_phrase');
 
 		http.onreadystatechange = function () { //Call a function when the state changes.
 			if (http.readyState == 4 && http.status == 200) {
