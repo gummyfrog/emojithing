@@ -64,6 +64,9 @@ function getCache() {
 	function processRequest(e) {
 		if (xhr.readyState == 4 && xhr.status == 200) {
 			var status = JSON.parse(xhr.response);
+			var tweetBox = document.getElementById('twitterInfo');
+			tweetBox.innerHTML = "";
+
 			document.getElementById('requests').textContent = status.requests;
 			document.getElementById('occupied').textContent = status.occupied;
 			document.getElementById('interval').textContent = status.interval;
@@ -85,6 +88,22 @@ function getCache() {
 			console.log(status.interval);
 			var timer = setInterval(function () {
 				status.interval--;
+				console.log(status.displayTweets.length);
+				if(status.displayTweets.length !=0) {
+					var tweet = status.displayTweets[0];
+
+					tweetBox.innerHTML += `<span id=${tweet.id_str}></span>`;
+
+				    twttr.widgets.createTweet(tweet.id_str, document.getElementById(tweet.id_str), {
+				        conversation: 'none',
+				        cards: 'hidden',
+				        linkColor: '#cc0000',
+				        theme: 'light'
+				    });
+
+					status.displayTweets.shift();
+				}
+
 				document.getElementById("interval").textContent = status.interval;
 				if (status.interval <= 1)
 					clearInterval(timer);
