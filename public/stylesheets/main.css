@@ -38,9 +38,7 @@ body {
 
 
 
-.twitter {
-  width: 300px !important;
-  height: 150px !important;
+.tweet {
   animation:fadein 0.2s;
 }
 

@@ -80,16 +80,26 @@ function getCache() {
 			if(status.displayTweets.length !=0) {
 				for(var x=0;x<status.displayTweets.length;x++) {
 					var tweet = status.displayTweets[x].tweet;
-					tweetBox.innerHTML += `<div id=${tweet.id_str} class="twitter"></div>`;
-
-					twttr.widgets.createTweet(tweet.id_str, document.getElementById(tweet.id_str), {
-				        conversation: 'none',
-				        cards: 'hidden',
-				        linkColor: '#cc0000',
-				        theme: 'light'
-			    	});
+					tweetBox.innerHTML += `<div tweetID=${tweet.id_str} class="tweet"></div>`;
 				}
 			}
+
+			var elements = document.getElementsByClassName("tweet");
+			  for(var i=0; i<elements.length; i++) {
+			    var tweet = elements[i];
+			    var id = tweet.getAttribute("tweetID")
+			    if(twttr != undefined) {
+			      twttr.widgets.createTweet(
+			      id, tweet,
+			      {
+			        conversation : 'none',    // or all
+			        cards        : 'hidden',  // or visible
+			        linkColor    : '#cc0000', // default is blue
+			        theme        : 'light'    // or dark
+			      });
+			    }
+			  }
+
 
 			setTimeout(function () {
 				document.getElementById('queryInfo').classList.remove('flash');
