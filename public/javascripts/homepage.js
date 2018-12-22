@@ -65,7 +65,6 @@ function getCache() {
 		if (xhr.readyState == 4 && xhr.status == 200) {
 			var status = JSON.parse(xhr.response);
 			var tweetBox = document.getElementById('twitterInfo');
-			tweetBox.innerHTML = "";
 
 			document.getElementById('requests').textContent = status.requests;
 			document.getElementById('occupied').textContent = status.occupied;
@@ -78,6 +77,7 @@ function getCache() {
 			document.getElementById('clientInfo').classList.add('flash');
 
 			if(status.displayTweets.length !=0) {
+				tweetBox.innerHTML = "";
 				for(var x=0;x<status.displayTweets.length;x++) {
 					var tweet = status.displayTweets[x].tweet;
 					tweetBox.innerHTML += `<div tweetID=${tweet.id_str} class="tweet"></div>`;

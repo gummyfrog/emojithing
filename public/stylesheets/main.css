@@ -12,13 +12,13 @@ body {
 
 
 .queryFeed {
-  font-size: 10px;
+  font-size: 12px;
   text-align: left;
   float: left;
   width: 50%;
   left: 0;
   top: 0;
-  opacity: 0.4;
+  opacity: 0.6;
 }
 
 .clientFeed {
@@ -28,7 +28,7 @@ body {
   width: 50%;
   right: 0;
   top: 0;
-  opacity: 0.4;
+  opacity: 0.6;
 }
 
 .twitterFeed {
