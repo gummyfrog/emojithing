@@ -90,7 +90,7 @@ function getCache() {
 				status.interval--;
 				console.log(status.displayTweets.length);
 				if(status.displayTweets.length !=0) {
-					var tweet = status.displayTweets[0];
+					var tweet = status.displayTweets[0].tweet;
 
 					tweetBox.innerHTML += `<span id=${tweet.id_str}></span>`;
 
