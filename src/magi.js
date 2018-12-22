@@ -392,6 +392,10 @@ class Magi {
 
 	searchLoop() {
 		this.tweetsCollectedThisLoop = 0;
+		this.queryInfo = [];
+		this.clientInfo = [];
+		this.displayTweets = [];
+
 		console.log('\n')
 		console.log(' ⧗ ' + moment().format("MMM Do, h:mm:ss a"))
 		console.log(this.occupiedClientNumbers);
@@ -405,8 +409,7 @@ class Magi {
 			}
 
 			// looping through requests...
-			this.queryInfo = [];
-			this.clientInfo = [];
+
 			for (var i = 2; i < files.length; i++) {
 				// console.log(i + ' / ' + files.length);
 				jsonfile.readFile('./src/magi/requests/' + files[i], (err, obj) => {
