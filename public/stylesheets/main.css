@@ -36,13 +36,12 @@ body {
   width: 40%;
   height: 600px;
   bottom: 20px;
-  background-color: blue;
 }
 
 
 
-.twitter-tweet {
-  width: 200px !important;
+.twitter {
+  width: 300px !important;
   height: 150px !important;
   animation:fadein 0.2s;
 }

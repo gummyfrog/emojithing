@@ -92,7 +92,7 @@ function getCache() {
 				if(status.displayTweets.length !=0) {
 					var tweet = status.displayTweets[0].tweet;
 
-					tweetBox.innerHTML += `<span id=${tweet.id_str}></span>`;
+					tweetBox.innerHTML += `<div id=${tweet.id_str} class="twitter"></div>`;
 
 				    twttr.widgets.createTweet(tweet.id_str, document.getElementById(tweet.id_str), {
 				        conversation: 'none',
