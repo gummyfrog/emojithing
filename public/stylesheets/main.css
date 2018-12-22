@@ -40,6 +40,14 @@ body {
 }
 
 
+
+.twitter-tweet {
+  width: 200px !important;
+  height: 150px !important;
+  animation:fadein 0.2s;
+}
+
+
 .flash {
   animation:flash 1s;
 }
@@ -47,6 +55,11 @@ body {
 @keyframes flash {
   0% {opacity: 0;}
   100% {opacity: 0.4;}
+}
+
+@keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 .key {
