@@ -33,8 +33,6 @@ body {
 
 .twitterFeed {
   position: fixed;
-  width: 40%;
-  height: 600px;
   bottom: 20px;
 }
 
