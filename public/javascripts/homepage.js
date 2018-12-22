@@ -69,7 +69,7 @@ function getCache() {
 			document.getElementById('interval').textContent = status.interval;
 			document.getElementById('queryInfo').innerHTML = status.queryInfo;
 			document.getElementById('clientInfo').innerHTML = status.clientInfo;
-
+			console.log(status.displayTweets);
 
 			document.getElementById('queryInfo').classList.add('flash');
 			document.getElementById('clientInfo').classList.add('flash');

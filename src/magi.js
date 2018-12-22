@@ -14,14 +14,18 @@ class Magi {
 	constructor() {
 		moment().format();
 		this.sentiment = new Sentiment();
+
 		this.commons = fs.readFileSync('./src/commons.txt', 'utf8').split(',');
 		this.frames = ["•••", "•••", "o••", "•o•", "••o", "•••", "o••", "oo•", "ooo", "ooo", "ooo", "•oo", "••o"];
+
 		this.occupiedClientNumbers = [];
 		this.clients = [];
 		this.fileNames = [];
 		this.queryInfo = [];
 		this.clientInfo = [];
+		this.displayTweets = [];
 		this.earlyCompletionQueries = [];
+
 		this.searchInterval = 20;
 		this.frameCount = 0;
 		this.requestCount = 0;
@@ -141,26 +145,13 @@ class Magi {
 	// Requests
 
 
-	generateFileName(title, requestParent, parentFileName) {
-		var generated;
-		if (requestParent == null || parentFileName == null) {
-			generated = (title + (Math.floor(Math.random() * 10000) + 1));
-		} else {
-			generated = (title + (Math.floor(Math.random() * 10000) + 1) + '<' + requestParent + '<' + parentFileName);
-		}
-		if (this.fileNames.indexOf(generated) != -1) {
-			generated = this.generateFileName(title, requestParent);
-		}
-		return generated;
-	}
-
 	request(options) {
 
 		var filename;
 		if (options.hasOwnProperty('isChild') && options.isChild == true) {
-			filename = this.generateFileName(options.query, options.requestParent, options.parentFileName);
+			filename = helperFunctions.generateFileName(options.query, options.requestParent, options.parentFileName);
 		} else {
-			filename = this.generateFileName(options.query);
+			filename = helperFunctions.generateFileName(options.query);
 			options.currentDepth = 0;
 			options.parentFileName = filename;
 			options.requestParent = '';
@@ -485,27 +476,28 @@ class Magi {
 							return;
 						}
 
-						let savedExample;
 						asyncLoop(tweets.statuses, (item, next) => {
 
 							if (obj.uniques.includes(item.user.id_str)) {
 								// user is not unique
 							} else {
 
-								if (item.retweeted_status != null) {
+								if (item.retweeted_status) {
+
 									obj.temp.tweetTypes.push('RT');
+
 									if (item.retweet_count > 100 && !obj.temp.popular_tweets.includes(item.retweeted_status.id_str)) {
 										// storing popular tweet ids, so that they can be embedded dynamically
+										// post-completion display, that is...
 										obj.temp.popular_tweets.push(item.retweeted_status.id_str);
 
-										// console.log('pushed greater retweet count to populars')
+										// this is for the visualizer! realtime display.
+										this.displayTweets.push({query: obj.query, tweet: item});
+
 									}
+
 								} else {
 									obj.temp.tweetTypes.push('OC');
-								}
-
-								if (Math.floor(Math.random() * 4) + 1 == 3) {
-									savedExample = item.text;
 								}
 
 								obj.temp.usableTweets += 1
@@ -563,7 +555,6 @@ class Magi {
 							client: obj.clientNum,
 							window: `resetting in ${reset} and has been active `,
 							for: `${moment(obj.searchInfo.startTime).toNow(true)}`
-
 						});
 
 						console.log('\n + ∞ ' + obj.query + ' @ ' + obj.currentDepth + ' / ' + obj.config.depth + ' / (' + obj.filename + ')');

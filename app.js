@@ -62,6 +62,7 @@ app.get('/requests', function (req, res) {
 		"loopCollected": magi.tweetsCollectedThisLoop,
 		"queryInfo": helperFunctions.objarrayhtml(magi.queryInfo),
 		"clientInfo": helperFunctions.objarrayhtml(magi.clientInfo),
+		"displayTweets": magi.displayTweets
 	});
 })
 
@@ -80,7 +81,7 @@ app.post('/requests', function (req, res) {
 })
 
 app.post('/earlyComplete', function(req, res) {
-	console.log(req.body);
+	console.log(req.body);	
 	if(req.headers.authentication == 'very_secret_password') {
 		console.log(req.body);
 		magi.addEarlyCompletionQuery(req.body.complete);

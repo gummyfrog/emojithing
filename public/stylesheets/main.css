@@ -82,7 +82,6 @@ p:not(.key):not(.value) {
 }
 
 .odometers {
-  position: fixed;
 }
 
 .odometer {

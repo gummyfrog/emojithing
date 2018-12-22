@@ -244,3 +244,12 @@ exports.objarrayhtml = function(objarray) {
 	return returnHtml;
 }
 
+exports.generateFileName = function(title, requestParent, parentFileName) {
+	var generated;
+	if (requestParent == null || parentFileName == null) {
+		generated = (title + (Math.floor(Math.random() * 10000) + 1));
+	} else {
+		generated = (title + (Math.floor(Math.random() * 10000) + 1) + '<' + requestParent + '<' + parentFileName);
+	}
+	return generated;
+}
