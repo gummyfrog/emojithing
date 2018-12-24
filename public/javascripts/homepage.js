@@ -45,6 +45,50 @@ var tweetChart = new Chart(ctx, {
 	}
 });
 
+
+function scrollToElm(container, elm, duration){
+  var pos = getRelativePos(elm);
+  scrollTo( container, pos.top , 2);
+}
+
+function getRelativePos(elm){
+  var pPos = elm.parentNode.getBoundingClientRect(),
+      cPos = elm.getBoundingClientRect(),
+      pos = {};
+
+  pos.top    = cPos.top    - pPos.top + elm.parentNode.scrollTop,
+  pos.right  = cPos.right  - pPos.right,
+  pos.bottom = cPos.bottom - pPos.bottom,
+  pos.left   = cPos.left   - pPos.left;
+
+  return pos;
+}
+    
+function scrollTo(element, to, duration, onDone) {
+    var start = element.scrollTop,
+        change = to - start,
+        startTime = performance.now(),
+        val, now, elapsed, t;
+
+    function animateScroll(){
+        now = performance.now();
+        elapsed = (now - startTime)/1000;
+        t = (elapsed/duration);
+
+        element.scrollTop = start + change * easeInOutQuad(t);
+
+        if( t < 1 )
+            window.requestAnimationFrame(animateScroll);
+        else
+            onDone && onDone();
+    };
+
+    animateScroll();
+}
+
+
+function easeInOutQuad(t){ return t<.5 ? 2*t*t : -1+(4-2*t)*t };
+
 function addData(chart, label, data) {
 	chart.data.labels.push(label);
 	chart.data.datasets.forEach((dataset) => {
@@ -70,11 +114,9 @@ function getCache() {
 			document.getElementById('occupied').textContent = status.occupied;
 			document.getElementById('interval').textContent = status.interval;
 			document.getElementById('queryInfo').innerHTML = status.queryInfo;
-			document.getElementById('clientInfo').innerHTML = status.clientInfo;
 			console.log(status.displayTweets);
 
 			document.getElementById('queryInfo').classList.add('flash');
-			document.getElementById('clientInfo').classList.add('flash');
 
 			if(status.displayTweets.length !=0) {
 				tweetBox.innerHTML = "";
@@ -85,25 +127,26 @@ function getCache() {
 			}
 
 			var elements = document.getElementsByClassName("tweet");
-			  for(var i=0; i<elements.length; i++) {
-			    var tweet = elements[i];
-			    var id = tweet.getAttribute("tweetID")
-			    if(twttr != undefined) {
-			      twttr.widgets.createTweet(
-			      id, tweet,
-			      {
-			        conversation : 'none',    // or all
-			        cards        : 'hidden',  // or visible
-			        linkColor    : '#cc0000', // default is blue
-			        theme        : 'light'    // or dark
-			      });
-			    }
-			  }
+			for(var i=0; i<elements.length; i++) {
+				var tweet = elements[i];
+				var id = tweet.getAttribute("tweetID");
+				if(twttr != undefined) {
+				  twttr.widgets.createTweet(
+				  id, tweet,
+				  {
+				    conversation : 'none',    // or all
+				    cards        : 'hidden',  // or visible
+				    linkColor    : '#cc0000', // default is blue
+				    theme        : 'dark'    // or dark
+				  });
+				}
+			}
+
 
 
 			setTimeout(function () {
 				document.getElementById('queryInfo').classList.remove('flash');
-				document.getElementById('clientInfo').classList.remove('flash');
+				scrollToElm(tweetBox, document.getElementById("twitterInfo").lastChild, 1700);
 			}, 1000 * 2);
 
 
@@ -113,6 +156,9 @@ function getCache() {
 			console.log(status.interval);
 			var timer = setInterval(function () {
 				status.interval--;
+				if(status.interval < 10) {
+					document.getElementById('interval').textContent = status.interval + "0";
+				}
 				console.log(status.displayTweets.length);
 
 				document.getElementById("interval").textContent = status.interval;

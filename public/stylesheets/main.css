@@ -1,97 +1,61 @@
 body {
-  font: 18px "Lucida Grande", Helvetica, Arial, sans-serif;
+  font: 23px "Lucida Grande", Helvetica, Arial, sans-serif;
+  height: 100%;
+  margin: 0;
+  background-color: #000000;
+}
+
+html { 
+  height: 100%; 
 }
 
 .chart {
+  height: 55% !important;
   width: 115% !important;
   left: -10% !important;
   margin: none !important;
   position: fixed;
   bottom: 0;
-}
-
-
-.queryFeed {
-  font-size: 12px;
-  text-align: left;
-  float: left;
-  width: 50%;
-  left: 0;
-  top: 0;
-  opacity: 0.6;
-}
-
-.clientFeed {
-  font-size: 10px;
-  text-align: right;
-  float: right;
-  width: 50%;
-  right: 0;
-  top: 0;
-  opacity: 0.6;
-}
-
-.twitterFeed {
-  position: fixed;
-  bottom: 20px;
-}
-
-
-
-.tweet {
-  animation:fadein 0.2s;
-}
-
-
-.flash {
-  animation:flash 1s;
-}
-
-@keyframes flash {
-  0% {opacity: 0;}
-  100% {opacity: 0.4;}
-}
-
-@keyframes fadein {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
-
-.key {
-  display: inline-block;
-}
-
-.value {
-  display: inline-block;
-}
-
-
-p:not(.key):not(.value) {
-  font-family: "Helvetica Neue", sans-serif;
-  font-size: 23px;
-  font-weight: 400;
-  line-height: 30px;
-}
-
-
-.gum {
-  text-align: center;
-  font-family: "Helvetica Neue", sans-serif;
-  font-size: 60px;
-  line-height: 0px;
-  font-weight: 400;
-}
-
-.subgum {
-  text-align: center;
-  font-family: "Helvetica Neue", sans-serif;
-  font-size: 21px;
-  line-height: 0px;
-  font-weight: 300;
+  z-index:1000;
+  pointer-events: none;
 }
 
 .content {
-  margin: auto;
+  height: 100%;
+  width: 100%;
+}
+
+.info {
+  display: inline-block;
+  color: white;
+}
+
+#twitterInfo {
+  overflow-y: scroll;
+  overflow-x: scroll;
+}
+
+.queryInfo {
+  padding: 15px;
+}
+
+
+.tweet {
+  width: 440px;
+}
+
+
+.leftBar {
+  width: 445px;
+  height: 100%;
+  background-color: #212121;
+}
+
+.info {
+  width: 436px;
+  padding: 5px;
+  background-color: #303030;
+  max-height: 100%;
 }
 
 .odometers {
@@ -103,5 +67,6 @@ p:not(.key):not(.value) {
 }
 
 .odometer {
+  color: white;
   font-size: 230px;
 }
