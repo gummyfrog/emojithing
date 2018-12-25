@@ -46,48 +46,6 @@ var tweetChart = new Chart(ctx, {
 });
 
 
-function scrollToElm(container, elm, duration){
-  var pos = getRelativePos(elm);
-  scrollTo( container, pos.top , 2);
-}
-
-function getRelativePos(elm){
-  var pPos = elm.parentNode.getBoundingClientRect(),
-      cPos = elm.getBoundingClientRect(),
-      pos = {};
-
-  pos.top    = cPos.top    - pPos.top + elm.parentNode.scrollTop,
-  pos.right  = cPos.right  - pPos.right,
-  pos.bottom = cPos.bottom - pPos.bottom,
-  pos.left   = cPos.left   - pPos.left;
-
-  return pos;
-}
-    
-function scrollTo(element, to, duration, onDone) {
-    var start = element.scrollTop,
-        change = to - start,
-        startTime = performance.now(),
-        val, now, elapsed, t;
-
-    function animateScroll(){
-        now = performance.now();
-        elapsed = (now - startTime)/1000;
-        t = (elapsed/duration);
-
-        element.scrollTop = start + change * easeInOutQuad(t);
-
-        if( t < 1 )
-            window.requestAnimationFrame(animateScroll);
-        else
-            onDone && onDone();
-    };
-
-    animateScroll();
-}
-
-
-function easeInOutQuad(t){ return t<.5 ? 2*t*t : -1+(4-2*t)*t };
 
 function addData(chart, label, data) {
 	chart.data.labels.push(label);
@@ -109,7 +67,7 @@ function getCache() {
 		if (xhr.readyState == 4 && xhr.status == 200) {
 			var status = JSON.parse(xhr.response);
 			var tweetBox = document.getElementById('twitterInfo');
-
+			tweetBox.scrollTop = 0;
 			document.getElementById('requests').textContent = status.requests;
 			document.getElementById('occupied').textContent = status.occupied;
 			document.getElementById('interval').textContent = status.interval;
@@ -143,11 +101,10 @@ function getCache() {
 			}
 
 
-
 			setTimeout(function () {
 				document.getElementById('queryInfo').classList.remove('flash');
-				scrollToElm(tweetBox, document.getElementById("twitterInfo").lastChild, 1700);
-			}, 1000 * 2);
+				$(tweetBox).animate({scrollTop:$(tweetBox)[0].scrollHeight}, 16 * 1000)
+			}, 1000 * 1);
 
 
 			console.log(status.loopCollected);
@@ -157,7 +114,7 @@ function getCache() {
 			var timer = setInterval(function () {
 				status.interval--;
 				if(status.interval < 10) {
-					document.getElementById('interval').textContent = status.interval + "0";
+					document.getElementById('interval').textContent = status.interval;
 				}
 				console.log(status.displayTweets.length);
 
