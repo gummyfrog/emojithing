@@ -45,6 +45,8 @@ var tweetChart = new Chart(ctx, {
 	}
 });
 
+
+
 function addData(chart, label, data) {
 	chart.data.labels.push(label);
 	chart.data.datasets.forEach((dataset) => {
@@ -65,16 +67,14 @@ function getCache() {
 		if (xhr.readyState == 4 && xhr.status == 200) {
 			var status = JSON.parse(xhr.response);
 			var tweetBox = document.getElementById('twitterInfo');
-
+			tweetBox.scrollTop = 0;
 			document.getElementById('requests').textContent = status.requests;
 			document.getElementById('occupied').textContent = status.occupied;
 			document.getElementById('interval').textContent = status.interval;
 			document.getElementById('queryInfo').innerHTML = status.queryInfo;
-			document.getElementById('clientInfo').innerHTML = status.clientInfo;
 			console.log(status.displayTweets);
 
 			document.getElementById('queryInfo').classList.add('flash');
-			document.getElementById('clientInfo').classList.add('flash');
 
 			if(status.displayTweets.length !=0) {
 				tweetBox.innerHTML = "";
@@ -85,26 +85,26 @@ function getCache() {
 			}
 
 			var elements = document.getElementsByClassName("tweet");
-			  for(var i=0; i<elements.length; i++) {
-			    var tweet = elements[i];
-			    var id = tweet.getAttribute("tweetID")
-			    if(twttr != undefined) {
-			      twttr.widgets.createTweet(
-			      id, tweet,
-			      {
-			        conversation : 'none',    // or all
-			        cards        : 'hidden',  // or visible
-			        linkColor    : '#cc0000', // default is blue
-			        theme        : 'light'    // or dark
-			      });
-			    }
-			  }
+			for(var i=0; i<elements.length; i++) {
+				var tweet = elements[i];
+				var id = tweet.getAttribute("tweetID");
+				if(twttr != undefined) {
+				  twttr.widgets.createTweet(
+				  id, tweet,
+				  {
+				    conversation : 'none',    // or all
+				    cards        : 'hidden',  // or visible
+				    linkColor    : '#cc0000', // default is blue
+				    theme        : 'dark'    // or dark
+				  });
+				}
+			}
 
 
 			setTimeout(function () {
 				document.getElementById('queryInfo').classList.remove('flash');
-				document.getElementById('clientInfo').classList.remove('flash');
-			}, 1000 * 2);
+				$(tweetBox).animate({scrollTop:$(tweetBox)[0].scrollHeight}, 16 * 1000)
+			}, 1000 * 1);
 
 
 			console.log(status.loopCollected);
@@ -113,6 +113,9 @@ function getCache() {
 			console.log(status.interval);
 			var timer = setInterval(function () {
 				status.interval--;
+				if(status.interval < 10) {
+					document.getElementById('interval').textContent = status.interval;
+				}
 				console.log(status.displayTweets.length);
 
 				document.getElementById("interval").textContent = status.interval;

@@ -5,3 +5,4 @@ magi/products
 magi/requests
 **/.DS_Store
 SQLinfo
+src/magi/requests

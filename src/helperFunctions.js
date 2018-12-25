@@ -227,21 +227,21 @@ objhtml = function(obj) {
 	for(var i=0; i<keys.length; i++) {
 		var key = keys[i];
 		if(key == "query") {
-			returnHtml += `<span class="obj"><p class="key">${key}</p> <p class="value">${obj[key]}</p> <button class ="complete" id="${obj[key]}">Complete Early?</button> </span>`;
+			returnHtml += `${obj[key]} <button class ="complete" id="${obj[key]}">Complete Early?</button>`;
 		} else {
-			returnHtml += `<span class="obj"><p class="key">${key}</p> <p class="value">${obj[key]}</p> </span>`;
+			returnHtml += `${obj[key]}`;
 		}
 	}
 	return returnHtml;
 }
 
 exports.objarrayhtml = function(objarray) {
-	var returnHtml = "";
+	var returnHtml = `<div class = "queryInfo">`;
 	for(var x=0;x<objarray.length;x++) {
 		returnHtml += objhtml(objarray[x]);
-		returnHtml += "<br>"
+		returnHtml += '<br>';
 	}
-	return returnHtml;
+	return returnHtml+"</div>";
 }
 
 exports.generateFileName = function(title, requestParent, parentFileName) {

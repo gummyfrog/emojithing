@@ -547,18 +547,15 @@ class Magi {
 						this.tweetsCollectedThisLoop += obj.temp.usableTweets;
 						this.totalTweetsCollected += obj.temp.usableTweets;
 
-						this.queryInfo.push({
-							query: obj.query, 
-							rate: `${Math.ceil(obj.searchInfo.window_average)} tweets per 15m window`,
-							has: `${obj.collectedTweets} out of ${Math.floor(obj.count)} and will be `,
-							complete: moment(moment(obj.searchInfo.startTime).add(estimatedCompletion, 'minutes')).fromNow()
-						});
+						this.queryInfo.push(
+							`Collecting "${obj.query}" Tweets at a rate of ${Math.ceil(obj.searchInfo.window_average)} Tweets per 15m. Should be done ${moment(moment(obj.searchInfo.startTime).add(estimatedCompletion, 'minutes')).fromNow()}`
+						);
 
-						this.clientInfo.push({
-							client: obj.clientNum,
-							window: `resetting in ${reset} and has been active `,
-							for: `${moment(obj.searchInfo.startTime).toNow(true)}`
-						});
+						// this.clientInfo.push({
+						// 	client: obj.clientNum,
+						// 	window: `resetting in ${reset} and has been active `,
+						// 	for: `${moment(obj.searchInfo.startTime).toNow(true)}`
+						// });
 
 						console.log('\n + ∞ ' + obj.query + ' @ ' + obj.currentDepth + ' / ' + obj.config.depth + ' / (' + obj.filename + ')');
 						console.log(' |   ' + obj.collectedTweets + ' / ' + Math.floor(obj.count));

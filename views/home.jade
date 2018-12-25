@@ -6,16 +6,15 @@ html
 		link(rel='stylesheet' href='/stylesheets/odometer-theme-default.css')
 	body
 		canvas#chart.chart
-		div.content
-			div.queryFeed#queryInfo
-			div.clientFeed#clientInfo
-			div.twitterFeed#twitterInfo
-							
-			div.centered
-				div.odometers
-					h1#requests.odometer
-					h1#occupied.odometer
-					h1#interval.odometer
+			
+		div.leftBar
+			div.info#queryInfo
+			div.info#twitterInfo
+
+		div.odometers
+			h1#requests.odometer
+			h1#occupied.odometer
+			h1#interval.odometer
 
 	footer
 		script(src='https://cdn.jsdelivr.net/npm/moment@2.18.1/min/moment.min.js')
@@ -24,3 +23,5 @@ html
 		script(src="https://platform.twitter.com/widgets.js")
 		script(src="/javascripts/odometer.min.js")
 		script(src="/javascripts/homepage.js")
+
+
