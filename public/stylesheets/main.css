@@ -72,3 +72,25 @@ html {
   color: white;
   font-size: 230px;
 }
+
+.complete, .collapse {
+  background-color:#303030;
+  -moz-border-radius:11px;
+  -webkit-border-radius:11px;
+  border-radius:11px;
+  display:inline-block;
+  cursor:pointer;
+  color:#ffffff;
+  font-family:"Lucida Grande", Helvetica, Arial, sans-serif;
+  font-size:18px;
+  padding:3px 15px;
+  text-decoration:none;
+}
+.complete:hover, .collapse:hover {
+  background-color:#424242;
+}
+.complete:active, .collapse:active {
+  position:relative;
+  top:1px;
+}
+

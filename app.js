@@ -60,14 +60,14 @@ app.get('/requests', function (req, res) {
 		"interval": magi.searchInterval,
 		"totalCollected": magi.totalTweetsCollected,
 		"loopCollected": magi.tweetsCollectedThisLoop,
-		"queryInfo": helperFunctions.objarrayhtml(magi.queryInfo),
-		"clientInfo": helperFunctions.objarrayhtml(magi.clientInfo),
+		"queryInfo": helperFunctions.queryInfoToHTML(magi.queryInfo),
+		"products": helperFunctions.productInfoToHTML(magi.products),
 		"displayTweets": magi.displayTweets
 	});
 })
 
 app.post('/requests', function (req, res) {
-	if (req.headers.authentication == process.env.PASSWORD) {
+	if (req.headers.password == process.env.PASSWORD) {
 		if (req.body.query && req.body.count && req.body.config.cutoffs && req.body.config.childQueries) {
 			res.send('Request Recieved. Passing to Magi...');
 			magi.request(req.body);
@@ -81,13 +81,21 @@ app.post('/requests', function (req, res) {
 })
 
 app.post('/earlyComplete', function(req, res) {
-	console.log(req.body);	
-	if(req.headers.authentication == 'very_secret_password') {
+	if(req.headers.password == 'very_secret_password') {
 		console.log(req.body);
 		magi.addEarlyCompletionQuery(req.body.complete);
 		res.send('Recieved...');
 	}	
 })
+
+app.post('/collapse', function(req, res) {
+	console.log(req.body);
+	if(req.headers.password == 'very_secret_password') {
+		magi.collapseProduct(req.body.collapseFilename);
+		res.send('Recieved...');
+	}	
+})
+
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -107,19 +115,9 @@ app.use(function (err, req, res, next) {
 	res.render('error');
 });
 
-function post(obj) {
-	return axios.post('http://gummyfrog.herokuapp.com/site', {
-		frogeye: obj
-	}, {
-		"headers": {
-			"authentication": process.env.AUTHENTICATION
-		}
-	})
-}
-
 nodeCleanup(function (exitCode, signal) {
 	if (signal) {
-		post({
+		updater.post({
 			'status': 'offline'
 		}).then(() => {
 			process.kill(process.pid, signal);
@@ -135,6 +133,7 @@ setInterval(function () {
 		"active-clients": magi.occupiedClientNumbers.length,
 		"active-requests": magi.requestCount
 	})
+
 }, 1000 * 9);
 module.exports = app;
 

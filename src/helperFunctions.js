@@ -154,9 +154,9 @@ exports.formatHashtagObjs = function (objArray) {
 				// something went very wrong...
 				console.log("Couldn't find child: " + hashtag.children[j]);
 			} else {
-				console.log('    √ ' +childobj.filename + ' ' + childObj.currentDepth + ' is child of ' + hashtag._filename)
+				console.log('    √ ' +childObj.filename + ' ' + childObj.currentDepth + ' is child of ' + hashtag._filename)
 				if (childObj.hasOwnProperty('data')) {
-					trimData(childObj.data)
+					this.trimData(childObj.data)
 				};
 
 				hashtag.hashtagObjs.push(childObj);
@@ -221,28 +221,28 @@ exports.makeFrequencyDict = function (data, cutoff) {
 	return (backToObject);
 }
 
-objhtml = function(obj) {
-	var returnHtml = "";
-	var keys = Object.keys(obj);
-	for(var i=0; i<keys.length; i++) {
-		var key = keys[i];
-		if(key == "query") {
-			returnHtml += `${obj[key]} <button class ="complete" id="${obj[key]}">Complete Early?</button>`;
-		} else {
-			returnHtml += `${obj[key]}`;
-		}
-	}
-	return returnHtml;
-}
 
-exports.objarrayhtml = function(objarray) {
+exports.queryInfoToHTML = function(objarray) {
 	var returnHtml = `<div class = "queryInfo">`;
 	for(var x=0;x<objarray.length;x++) {
-		returnHtml += objhtml(objarray[x]);
-		returnHtml += '<br>';
+		returnHtml += `${objarray[x].msg} <br>`;
+		returnHtml += `<button class ="complete" id="${objarray[x].query}">Complete Early?</button><br>`;
 	}
 	return returnHtml+"</div>";
 }
+
+
+exports.productInfoToHTML = function(objarray) {
+	var returnHtml = `<div class = "productInfo">`;
+	for(var x=0;x<objarray.length;x++) {
+		console.log(objarray[x]);
+		returnHtml += `${objarray[x]} <br>`;
+		returnHtml += `<button class ="collapse" id="${objarray[x]}">Collapse ${objarray[x]}?</button><br>`;
+	}
+	return returnHtml+"</div>";
+}
+
+
 
 exports.generateFileName = function(title, requestParent, parentFileName) {
 	var generated;

@@ -72,9 +72,9 @@ function getCache() {
 			document.getElementById('occupied').textContent = status.occupied;
 			document.getElementById('interval').textContent = status.interval;
 			document.getElementById('queryInfo').innerHTML = status.queryInfo;
-			console.log(status.displayTweets);
+			document.getElementById('products').innerHTML = status.products;
 
-			document.getElementById('queryInfo').classList.add('flash');
+			console.log(status.displayTweets);
 
 			if(status.displayTweets.length !=0) {
 				tweetBox.innerHTML = "";
@@ -140,7 +140,7 @@ document.addEventListener('click', function (e) {
 
 		//Send the proper header information along with the request
 		http.setRequestHeader('Content-type', 'application/json');
-		http.setRequestHeader('authentication', 'very_secret_password');
+		http.setRequestHeader('password', 'very_secret_password');
 
 		http.onreadystatechange = function () { //Call a function when the state changes.
 			if (http.readyState == 4 && http.status == 200) {
@@ -149,5 +149,25 @@ document.addEventListener('click', function (e) {
 		}
 		http.send(JSON.stringify(params));
 	}
+
+	if (e.target && e.target.classList.contains('collapse')) {
+		var http = new XMLHttpRequest();
+		var url = '/collapse';
+		var params = {collapseFilename: e.target.id};
+		http.open('POST', url, true);
+
+
+		//Send the proper header information along with the request
+		http.setRequestHeader('Content-type', 'application/json');
+		http.setRequestHeader('password', 'very_secret_password');
+
+		http.onreadystatechange = function () { //Call a function when the state changes.
+			if (http.readyState == 4 && http.status == 200) {
+				alert(http.responseText);
+			}
+		}
+		http.send(JSON.stringify(params));
+	}
+
 })
 

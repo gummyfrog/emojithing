@@ -8,12 +8,14 @@ const emojiTree = require('emoji-tree');
 const moment = require('moment');
 const Sentiment = require('sentiment')
 const helperFunctions = require('./helperFunctions.js');
+const DBUpdater = require('./DBupdater.js');
 
 class Magi {
 
 	constructor() {
 		moment().format();
 		this.sentiment = new Sentiment();
+		this.updater = new DBUpdater();
 
 		this.commons = fs.readFileSync('./src/commons.txt', 'utf8').split(',');
 		this.frames = ["•••", "•••", "o••", "•o•", "••o", "•••", "o••", "oo•", "ooo", "ooo", "ooo", "•oo", "••o"];
@@ -22,9 +24,9 @@ class Magi {
 		this.clients = [];
 		this.fileNames = [];
 		this.queryInfo = [];
-		this.clientInfo = [];
 		this.displayTweets = [];
 		this.earlyCompletionQueries = [];
+		this.products = [];
 
 		this.searchInterval = 20;
 		this.frameCount = 0;
@@ -382,7 +384,10 @@ class Magi {
 
 			helperFunctions.trimData(obj.data);
 			obj.hashtagObjs = helperFunctions.formatHashtagObjs(obj.hashtagObjs);
-			jsonfile.writeFileSync('./magi/products/product-' + product + '-formatted.json', obj);
+			obj.collapsed = true;
+			this.updater.store(obj);
+			jsonfile.writeFileSync('./src/magi/products/collapsed' + product, obj);
+
 		});
 	}
 
@@ -393,12 +398,24 @@ class Magi {
 	searchLoop() {
 		this.tweetsCollectedThisLoop = 0;
 		this.queryInfo = [];
-		this.clientInfo = [];
 		this.displayTweets = [];
 
 		console.log('\n')
 		console.log(' ⧗ ' + moment().format("MMM Do, h:mm:ss a"))
 		console.log(this.occupiedClientNumbers);
+
+		fs.readdir('./src/magi/products', (err, files) => {
+			files.shift();
+			this.products = files;
+			this.products.filter(filename => !filename.includes('collapsed-'));
+
+			if (files.length <= 0) {
+				return;
+			}
+			console.log(this.products);
+		});
+
+
 		fs.readdir('./src/magi/requests', (err, files) => {
 			console.log(' + Entered /requests')
 			this.requestCount = files.length - 2;
@@ -548,14 +565,12 @@ class Magi {
 						this.totalTweetsCollected += obj.temp.usableTweets;
 
 						this.queryInfo.push(
-							`Collecting "${obj.query}" Tweets at a rate of ${Math.ceil(obj.searchInfo.window_average)} Tweets per 15m. Should be done ${moment(moment(obj.searchInfo.startTime).add(estimatedCompletion, 'minutes')).fromNow()}`
+						{
+							msg:`Collecting "${obj.query}" Tweets at a rate of ${Math.ceil(obj.searchInfo.window_average)} Tweets per 15m. Should be done ${moment(moment(obj.searchInfo.startTime).add(estimatedCompletion, 'minutes')).fromNow()}`,
+							query: obj.query
+						}
 						);
 
-						// this.clientInfo.push({
-						// 	client: obj.clientNum,
-						// 	window: `resetting in ${reset} and has been active `,
-						// 	for: `${moment(obj.searchInfo.startTime).toNow(true)}`
-						// });
 
 						console.log('\n + ∞ ' + obj.query + ' @ ' + obj.currentDepth + ' / ' + obj.config.depth + ' / (' + obj.filename + ')');
 						console.log(' |   ' + obj.collectedTweets + ' / ' + Math.floor(obj.count));
