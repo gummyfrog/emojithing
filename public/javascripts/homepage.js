@@ -1,5 +1,3 @@
-
-
 var ctx = document.getElementById('chart').getContext('2d');
 var tweetChart = new Chart(ctx, {
 	type: 'line',
@@ -61,21 +59,21 @@ function getCache() {
 	xhr.open('GET', "/requests", true);
 	xhr.send();
 
-	xhr.onreadystatechange = processRequest;
-
 	function processRequest(e) {
+		console.log(`Code ${xhr.status}`);
 		if (xhr.readyState == 4 && xhr.status == 200) {
+			console.log('hello');
 			var status = JSON.parse(xhr.response);
-			var tweetBox = document.getElementById('twitterInfo');
+			var tweetBox = document.getElementById('displayTweets');
 			tweetBox.scrollTop = 0;
 			document.getElementById('requests').textContent = status.requests;
 			document.getElementById('occupied').textContent = status.occupied;
 			document.getElementById('interval').textContent = status.interval;
-			document.getElementById('queryInfo').innerHTML = status.queryInfo;
-			console.log(status.displayTweets);
 
-			document.getElementById('queryInfo').classList.add('flash');
+			document.getElementById('displayQuery').innerHTML = status.displayQuery;
+			document.getElementById('displayProducts').innerHTML = status.displayProducts;
 
+			console.log(status);
 			if(status.displayTweets.length !=0) {
 				tweetBox.innerHTML = "";
 				for(var x=0;x<status.displayTweets.length;x++) {
@@ -102,22 +100,15 @@ function getCache() {
 
 
 			setTimeout(function () {
-				document.getElementById('queryInfo').classList.remove('flash');
 				$(tweetBox).animate({scrollTop:$(tweetBox)[0].scrollHeight}, 16 * 1000)
 			}, 1000 * 1);
 
-
-			console.log(status.loopCollected);
-			console.log(status);
 			addData(tweetChart, "The Now", status.loopCollected)
-			console.log(status.interval);
 			var timer = setInterval(function () {
 				status.interval--;
 				if(status.interval < 10) {
 					document.getElementById('interval').textContent = status.interval;
 				}
-				console.log(status.displayTweets.length);
-
 				document.getElementById("interval").textContent = status.interval;
 				if (status.interval <= 1)
 					clearInterval(timer);
@@ -125,29 +116,40 @@ function getCache() {
 
 		};
 	};
+
+	xhr.onreadystatechange = processRequest;
+
 };
 
-getCache();
-setInterval(getCache, 1000 * 20)
-
 document.addEventListener('click', function (e) {
-	if (e.target && e.target.classList.contains('complete')) {
+	if (e.target) {
+		var classList = e.target.classList;
 		var http = new XMLHttpRequest();
-		var url = '/earlyComplete';
-		var params = {complete: e.target.id};
+		var url;
+		var params;
+
+		if(classList.contains('complete')) {
+			url = '/earlyComplete';
+			params = {complete: e.target.id};
+		} else if(classList.contains('magiMove')) {
+			url = '/magiMove',
+			params = {filename: e.target.id};
+		}
+
 		http.open('POST', url, true);
-
-
-		//Send the proper header information along with the request
 		http.setRequestHeader('Content-type', 'application/json');
-		http.setRequestHeader('authentication', 'very_secret_password');
+		http.setRequestHeader('password', 'very_secret_password');
 
 		http.onreadystatechange = function () { //Call a function when the state changes.
 			if (http.readyState == 4 && http.status == 200) {
 				alert(http.responseText);
 			}
 		}
+
 		http.send(JSON.stringify(params));
 	}
 })
+
+getCache();
+setInterval(getCache, 1000 * 20)
 

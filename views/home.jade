@@ -5,16 +5,22 @@ html
 		link(rel='stylesheet', href='/stylesheets/main.css')
 		link(rel='stylesheet' href='/stylesheets/odometer-theme-default.css')
 	body
-		canvas#chart.chart
-			
-		div.leftBar
-			div.info#queryInfo
-			div.info#twitterInfo
+		div.container3
+			div.container2
+				div.container1
+					div.col1
+						div.info#displayQuery
+						div.info#displayProducts
 
-		div.odometers
-			h1#requests.odometer
-			h1#occupied.odometer
-			h1#interval.odometer
+					div.col2
+						div.odometers
+							h1#requests.odometer
+							h1#occupied.odometer
+							h1#interval.odometer
+						canvas#chart.chart
+
+					div.col3
+						div.info#displayTweets
 
 	footer
 		script(src='https://cdn.jsdelivr.net/npm/moment@2.18.1/min/moment.min.js')

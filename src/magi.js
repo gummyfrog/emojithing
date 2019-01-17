@@ -16,14 +16,22 @@ class Magi {
 		this.sentiment = new Sentiment();
 
 		this.commons = fs.readFileSync('./src/commons.txt', 'utf8').split(',');
-		this.frames = ["•••", "•••", "o••", "•o•", "••o", "•••", "o••", "oo•", "ooo", "ooo", "ooo", "•oo", "••o"];
+		// this.frames = ["•••", "•••", "o••", "•o•", "••o", "•••", "o••", "oo•", "ooo", "ooo", "ooo", "•oo", "••o"];
+		this.frames = [ 
+		"⢀⠀", "⡀⠀", "⠄⠀", "⢂⠀", "⡂⠀", "⠅⠀", "⢃⠀", "⡃⠀",
+		"⠍⠀", "⢋⠀", "⡋⠀", "⠍⠁", "⢋⠁", 
+		"⡋⠁", "⠍⠉", "⠋⠉", "⠋⠉", "⠉⠙", "⠉⠙", 
+		"⠉⠩", "⠈⢙", "⠈⡙", "⢈⠩", "⡀⢙", "⠄⡙", "⢂⠩", 
+		"⡂⢘", "⠅⡘", "⢃⠨", "⡃⢐", "⠍⡐", "⢋⠠", "⡋⢀", 
+		"⠍⡁", "⢋⠁", "⡋⠁", "⠍⠉", "⠋⠉", "⠋⠉", "⠉⠙", "⠉⠙", "⠉⠩", 
+		"⠈⢙", "⠈⡙", "⠈⠩", "⠀⢙", "⠀⡙", "⠀⠩", "⠀⢘", "⠀⡘", 
+		"⠀⠨", "⠀⢐", "⠀⡐", "⠀⠠", "⠀⢀", "⠀⡀"]
 
 		this.occupiedClientNumbers = [];
 		this.clients = [];
-		this.fileNames = [];
-		this.queryInfo = [];
-		this.clientInfo = [];
+		this.displayQuery = [];
 		this.displayTweets = [];
+		this.displayProducts =[];
 		this.earlyCompletionQueries = [];
 
 		this.searchInterval = 20;
@@ -391,9 +399,19 @@ class Magi {
 
 
 	searchLoop() {
+		// before anything, just check what products are being stored here.
+		// this is where the displayQuery loop check would be added.
+		fs.readdir('./src/magi/products', (err, files) => {
+			console.log(files);
+			this.displayProducts = files.map((file) => {
+				if(!['.DS_Store'].includes(file)) {
+					return `<p class="file">${file} IS STORED HERE. <button id="${file}" class="magiMove">Move ${file} to storage?</button></p>`
+				};
+			}).join('<br>');
+		});
+
 		this.tweetsCollectedThisLoop = 0;
-		this.queryInfo = [];
-		this.clientInfo = [];
+		this.displayQuery = [];
 		this.displayTweets = [];
 
 		console.log('\n')
@@ -547,15 +565,12 @@ class Magi {
 						this.tweetsCollectedThisLoop += obj.temp.usableTweets;
 						this.totalTweetsCollected += obj.temp.usableTweets;
 
-						this.queryInfo.push(
-							`Collecting "${obj.query}" Tweets at a rate of ${Math.ceil(obj.searchInfo.window_average)} Tweets per 15m. Should be done ${moment(moment(obj.searchInfo.startTime).add(estimatedCompletion, 'minutes')).fromNow()}`
-						);
 
-						// this.clientInfo.push({
-						// 	client: obj.clientNum,
-						// 	window: `resetting in ${reset} and has been active `,
-						// 	for: `${moment(obj.searchInfo.startTime).toNow(true)}`
-						// });
+						// this MIGHT be faster than just reading all of the search files, checking active client, and then mapping this string? who knows.
+						this.displayQuery.push(
+							`<p class="query">Collecting "${obj.query}" Tweets at a rate of ${Math.ceil(obj.searchInfo.window_average)} Tweets per 15m. Should be done ${moment(moment(obj.searchInfo.startTime).add(estimatedCompletion, 'minutes')).fromNow()}`+
+							`<button id="${obj.query}" class="complete"> Complete ${obj.query} Early? </button></p>`
+						);
 
 						console.log('\n + ∞ ' + obj.query + ' @ ' + obj.currentDepth + ' / ' + obj.config.depth + ' / (' + obj.filename + ')');
 						console.log(' |   ' + obj.collectedTweets + ' / ' + Math.floor(obj.count));

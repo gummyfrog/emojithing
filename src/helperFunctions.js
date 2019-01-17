@@ -221,29 +221,6 @@ exports.makeFrequencyDict = function (data, cutoff) {
 	return (backToObject);
 }
 
-objhtml = function(obj) {
-	var returnHtml = "";
-	var keys = Object.keys(obj);
-	for(var i=0; i<keys.length; i++) {
-		var key = keys[i];
-		if(key == "query") {
-			returnHtml += `${obj[key]} <button class ="complete" id="${obj[key]}">Complete Early?</button>`;
-		} else {
-			returnHtml += `${obj[key]}`;
-		}
-	}
-	return returnHtml;
-}
-
-exports.objarrayhtml = function(objarray) {
-	var returnHtml = `<div class = "queryInfo">`;
-	for(var x=0;x<objarray.length;x++) {
-		returnHtml += objhtml(objarray[x]);
-		returnHtml += '<br>';
-	}
-	return returnHtml+"</div>";
-}
-
 exports.generateFileName = function(title, requestParent, parentFileName) {
 	var generated;
 	if (requestParent == null || parentFileName == null) {

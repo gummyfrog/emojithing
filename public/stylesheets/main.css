@@ -1,74 +1,93 @@
 body {
   font: 23px "Lucida Grande", Helvetica, Arial, sans-serif;
-  height: 100%;
   margin: 0;
   background-color: #000000;
 }
 
-html { 
-  height: 100%; 
+/*.query {
+  font: 23px "Lucida Grande", Helvetica, Arial, sans-serif;
+  color: white;
 }
 
+.file {
+  font: 23px "Lucida Grande", Helvetica, Arial, sans-serif;
+  color: red;
+}
+*/
+
+
 .chart {
-  height: 55% !important;
-  width: 115% !important;
-  left: -10% !important;
+  padding: none !important;
   margin: none !important;
-  position: fixed;
-  bottom: 0;
   z-index:1000;
   pointer-events: none;
 }
 
-.content {
-  height: 100%;
-  width: 100%;
+
+/*.tweet {
+  width: 440px;
+}*/
+
+
+.container3 {
+    float:left;
+    width:100%;
+    background:black;
+    overflow:hidden;
+    position:relative;
+}
+.container2 {
+    float:left;
+    width:100%;
+    background:yellow;
+    position:relative;
+    right:30%;
+}
+.container1 {
+    float:left;
+    width:100%;
+    background:red;
+    position:relative;
+    right:40%;
+}
+.col1 {
+    float:left;
+    width:26%;
+    position:relative;
+    left:72%;
+    overflow:hidden;
+}
+.col2 {
+    float:left;
+    width:36%;
+    position:relative;
+    left:76%;
+    overflow:hidden;
+}
+.col3 {
+    float:left;
+    width:26%;
+    position:relative;
+    left:80%;
+    overflow:hidden;
 }
 
+
 .info {
-  display: inline-block;
+  float: top;
+  background-color: #303030;
+  max-height: 100vh;
+  overflow: auto;  
+  overflow-y: scroll;
   color: white;
 }
 
-#twitterInfo {
-  overflow-y: scroll;
-  overflow-x: scroll;
-  -ms-overflow-style: none;  // IE 10+
-  overflow: -moz-scrollbars-none;  // Firefox
-}
-
-.queryInfo {
-  padding: 15px;
-}
-
-
-.tweet {
-  width: 440px;
-}
-
-
-.leftBar {
-  width: 445px;
-  height: 100%;
-  background-color: #212121;
-}
-
-.info {
-  width: 436px;
-  padding: 5px;
-  background-color: #303030;
-  max-height: 100%;
-}
-
 .odometers {
-  position: absolute;
-  left: 50%;
-  transform: translate(-50%, 0);
-  top: 40%;
-  transform: translate(-50%,-50%);
+  margin: auto;
+  width: 50%;
 }
 
 .odometer {
   color: white;
-  font-size: 230px;
+  font-size: 100px;
 }

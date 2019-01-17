@@ -2,72 +2,79 @@ var Magi = require('./src/magi.js');
 var Updater = require('./src/updater.js');
 var helperFunctions = require('./src/helperFunctions.js')
 var Index = require('./routes/index');
-var axios = require('axios');
+
 var nodeCleanup = require('node-cleanup');
 var express = require('express');
 var path = require('path');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var stylus = require('stylus');
-
-var app = express();
-var magi = new Magi();
-var updater = new Updater();
-
-updater.name = "frogeye";
-updater.desc = "Crystal Ball for the Ultimate Socialite.";
-
-const index = new Index();
 
 nodeCleanup(function (exitCode, signal) {
 	if (signal) {
-		updater.post({
-			'status': 'offline'
-		}).then(() => {
-			process.kill(process.pid, signal);
-		});
+		updater.post({'status': 'offline'})
+			.then(() => {
+				console.log('Posted Offline Message.');
+				process.kill(process.pid, signal);
+			})
+			.catch((err) => {
+				console.log('Error connecting to DB for cleanup, killing anyway.');
+				process.kill(process.pid, signal);
+			})
+
 		nodeCleanup.uninstall(); // don't call cleanup handler again
 		return false;
 	}
 });
 
+setInterval(function () {
+	updater.post({
+		"status": 'online',
+		"active-clients": magi.occupiedClientNumbers.length,
+		"active-requests": magi.requestCount
+	}).catch((err) => {
+		console.log('Error connecting to DB.')
+	})
+}, 1000 * 9);
+
+
+var app = express();
+var magi = new Magi();
+var updater = new Updater();
+var index = new Index();
+
+updater.name = "frogeye";
+updater.desc = "Crystal Ball for the Ultimate Socialite.";
 magi.start();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
-// uncomment after placing your favicon in /public
-app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
 	extended: false
 }));
-app.use(cookieParser());
-app.use(stylus.middleware(path.join(__dirname, 'public')));
+
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/node_jszip', express.static(__dirname + '/node_modules/jszip/'));
-app.use('/node_sylb-haiku', express.static(__dirname + '/node_modules/sylb-haiku/'));
 app.use('/', index.router);
 
 app.get('/requests', function (req, res) {
+	console.log(`RQ to /requests ... ${res}`);
 	res.send({
 		"requests": magi.requestCount,
 		"occupied": magi.occupiedClientNumbers.length,
 		"interval": magi.searchInterval,
 		"totalCollected": magi.totalTweetsCollected,
 		"loopCollected": magi.tweetsCollectedThisLoop,
-		"queryInfo": helperFunctions.objarrayhtml(magi.queryInfo),
-		"clientInfo": helperFunctions.objarrayhtml(magi.clientInfo),
-		"displayTweets": magi.displayTweets
+		"displayQuery": magi.displayQuery.join('<br>'),
+		"displayProducts": magi.displayProducts,
+		"displayTweets": magi.displayTweets,
 	});
 })
 
+
+
 app.post('/requests', function (req, res) {
-	if (req.headers.authentication == process.env.PASSWORD) {
+	if (req.headers.password == process.env.PASSWORD) {
 		if (req.body.query && req.body.count && req.body.config.cutoffs && req.body.config.childQueries) {
 			res.send('Request Recieved. Passing to Magi...');
 			magi.request(req.body);
@@ -82,10 +89,18 @@ app.post('/requests', function (req, res) {
 
 app.post('/earlyComplete', function(req, res) {
 	console.log(req.body);	
-	if(req.headers.authentication == 'very_secret_password') {
+	if(req.headers.password == 'very_secret_password') {
 		console.log(req.body);
 		magi.addEarlyCompletionQuery(req.body.complete);
-		res.send('Recieved...');
+		res.send('Recieved!');
+	}	
+})
+
+app.post('/magiMove', function(req, res) {
+	console.log(req.body);	
+	if(req.headers.password == 'very_secret_password') {
+		updater.store(`./src/magi/products/${req.body.filename}`);
+		res.send('!Recieved!');
 	}	
 })
 
@@ -107,63 +122,4 @@ app.use(function (err, req, res, next) {
 	res.render('error');
 });
 
-function post(obj) {
-	return axios.post('http://gummyfrog.herokuapp.com/site', {
-		frogeye: obj
-	}, {
-		"headers": {
-			"authentication": process.env.AUTHENTICATION
-		}
-	})
-}
-
-nodeCleanup(function (exitCode, signal) {
-	if (signal) {
-		post({
-			'status': 'offline'
-		}).then(() => {
-			process.kill(process.pid, signal);
-		});
-		nodeCleanup.uninstall(); // don't call cleanup handler again
-		return false;
-	}
-});
-
-setInterval(function () {
-	updater.post({
-		"status": 'online',
-		"active-clients": magi.occupiedClientNumbers.length,
-		"active-requests": magi.requestCount
-	})
-}, 1000 * 9);
 module.exports = app;
-
-// var options = {
-//   query: 'developers',
-//   count: 200,
-//   config: {
-//     depth: 2,
-//     childQueries:0,
-//     cutoffs:{
-//       words:{
-//         type:'percentage',
-//         value:50
-//       },
-//       emojis:{
-//         type:'percentage',
-//         value:10
-//       },
-//       hashtags:{
-//         type:'percentage',
-//         value:30
-//       },
-//       decimate:{
-//         step: 1,
-//       }
-//     },
-//     tooLow: 100,
-//     divisor: 2
-//   }
-// };
-// curl -d '{"bolopo":{}}' -H "Content-Type: application/json, authentication: cicadas2565" -X POST http://localhost:3000/site
-
